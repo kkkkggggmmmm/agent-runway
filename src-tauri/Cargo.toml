@@ -1,0 +1,23 @@
+[package]
+name = "agent-runway"
+version = "0.2.0"
+description = "Native Work + Codex quota runway dashboard"
+authors = ["DWDAI"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "agent_runway_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.11.5", features = ["tray-icon", "image-png"] }
+tauri-plugin-autostart = "2.5.1"
+tauri-plugin-single-instance = "2.4.3"
+tokio = { version = "1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
+
