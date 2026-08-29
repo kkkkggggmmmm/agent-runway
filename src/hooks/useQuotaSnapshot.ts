@@ -15,7 +15,6 @@ import {
   persistHistory,
   readHistory,
 } from "../lib/history";
-import { readRateLimits, subscribeRateLimits } from "../lib/runtime";
 
 interface QuotaState {
   snapshot: NormalizedQuotaSnapshot | null;
@@ -35,32 +34,18 @@ const initialState = (): QuotaState => ({
   error: null,
 });
 
+const responseError = async (response: Response): Promise<string> => {
+  try {
+    const payload = await response.json() as { error?: string };
+    return payload.error || `利用枠を取得できません (${response.status})`;
+  } catch {
+    return `利用枠を取得できません (${response.status})`;
+  }
+};
+
 export const useQuotaSnapshot = () => {
   const [state, setState] = useState<QuotaState>(initialState);
   const requestNumber = useRef(0);
-
-  const applyRawSnapshot = useCallback((raw: RawRateLimitResponse) => {
-    const nextSnapshot = normalizeRateLimits(raw);
-    setState((current) => {
-      const detected = current.snapshot ? detectQuotaEvents(current.snapshot, nextSnapshot) : [];
-      const resetDetected = detected.some((event) => event.type === "early_reset" || event.type === "scheduled_reset");
-      const weekly = findWeeklyWindow(nextSnapshot);
-      let nextHistory = resetDetected ? clearHistory() : current.history;
-      if (weekly) {
-        nextHistory = nextSnapshot.source === "demo"
-          ? createSyntheticDemoHistory(weekly, nextSnapshot.observedAt)
-          : appendObservation(nextHistory, weekly, nextSnapshot.observedAt);
-      }
-      return {
-        snapshot: nextSnapshot,
-        history: nextHistory,
-        events: [...detected, ...current.events].slice(0, 20),
-        loading: false,
-        refreshing: false,
-        error: null,
-      };
-    });
-  }, []);
 
   const refresh = useCallback(async (manual = false) => {
     const currentRequest = requestNumber.current + 1;
@@ -68,9 +53,35 @@ export const useQuotaSnapshot = () => {
     setState((current) => ({ ...current, refreshing: manual || current.snapshot !== null, error: null }));
 
     try {
-      const raw = await readRateLimits(manual);
+      const response = await fetch(manual ? "/api/refresh" : "/api/rate-limits", {
+        method: manual ? "POST" : "GET",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error(await responseError(response));
+      const raw = await response.json() as RawRateLimitResponse;
+      const nextSnapshot = normalizeRateLimits(raw);
       if (requestNumber.current !== currentRequest) return;
-      applyRawSnapshot(raw);
+
+      setState((current) => {
+        const detected = current.snapshot ? detectQuotaEvents(current.snapshot, nextSnapshot) : [];
+        const resetDetected = detected.some((event) => event.type === "early_reset" || event.type === "scheduled_reset");
+        const weekly = findWeeklyWindow(nextSnapshot);
+        let nextHistory = resetDetected ? clearHistory() : current.history;
+        if (weekly) {
+          nextHistory = nextSnapshot.source === "demo"
+            ? createSyntheticDemoHistory(weekly, nextSnapshot.observedAt)
+            : appendObservation(nextHistory, weekly, nextSnapshot.observedAt);
+        }
+        return {
+          snapshot: nextSnapshot,
+          history: nextHistory,
+          events: [...detected, ...current.events].slice(0, 20),
+          loading: false,
+          refreshing: false,
+          error: null,
+        };
+      });
     } catch (error) {
       if (requestNumber.current !== currentRequest) return;
       setState((current) => ({
@@ -80,7 +91,7 @@ export const useQuotaSnapshot = () => {
         error: error instanceof Error ? error.message : "利用枠を取得できません",
       }));
     }
-  }, [applyRawSnapshot]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -94,21 +105,6 @@ export const useQuotaSnapshot = () => {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [refresh]);
-
-  useEffect(() => {
-    let disposed = false;
-    let unlisten: (() => void) | undefined;
-    void subscribeRateLimits((raw) => {
-      if (!disposed) applyRawSnapshot(raw);
-    }).then((dispose) => {
-      if (disposed) dispose();
-      else unlisten = dispose;
-    });
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
-  }, [applyRawSnapshot]);
 
   useEffect(() => {
     if (state.snapshot?.source === "live") persistHistory(state.history);

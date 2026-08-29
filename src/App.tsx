@@ -14,7 +14,6 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { StatusHeader } from "./components/StatusHeader";
 import { WeeklyStrip } from "./components/WeeklyStrip";
 import { useBudgetSettings } from "./hooks/useBudgetSettings";
-import { useDesktopPreferences } from "./hooks/useDesktopPreferences";
 import { useNow } from "./hooks/useNow";
 import { useQuotaSnapshot } from "./hooks/useQuotaSnapshot";
 import {
@@ -49,7 +48,6 @@ const metricEmphasis = (tone: SignalTone): "neutral" | "positive" | "warning" | 
 export default function App() {
   const { snapshot, history, events, loading, refreshing, error, refresh } = useQuotaSnapshot();
   const { settings, setReservePercent } = useBudgetSettings();
-  const desktop = useDesktopPreferences();
   const now = useNow();
 
   if (!snapshot) return <EmptyState loading={loading} error={error} onRetry={refresh} />;
@@ -141,16 +139,7 @@ export default function App() {
 
         <section className="lower-grid">
           <WeeklyStrip metric={pace} />
-          <SettingsPanel
-            reservePercent={settings.reservePercent}
-            onReserveChange={setReservePercent}
-            desktop={desktop.isDesktop ? {
-              autostartEnabled: desktop.autostartEnabled,
-              autostartLoading: desktop.autostartLoading,
-              autostartError: desktop.autostartError,
-              onAutostartChange: (enabled) => void desktop.updateAutostart(enabled),
-            } : undefined}
-          />
+          <SettingsPanel reservePercent={settings.reservePercent} onReserveChange={setReservePercent} />
         </section>
 
         <LimitWindows windows={snapshot.windows} />
@@ -176,7 +165,7 @@ export default function App() {
 
         <footer className="app-footer">
           <span>Local only · No prompts or credentials stored</span>
-          <span>{desktop.isDesktop ? "Native tray active · " : ""}Agent Runway v0.2.0</span>
+          <span>Agent Runway v0.1.0</span>
         </footer>
       </main>
     </div>

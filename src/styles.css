@@ -162,19 +162,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(49, 95, 203,
 .slider-label { display: flex; flex-direction: column; gap: 18px; margin-top: 22px; color: var(--muted); font-size: 11px; }
 input[type="range"] { width: 100%; accent-color: var(--blue); cursor: pointer; }
 .slider-scale { display: flex; justify-content: space-between; color: #9ba4b3; font: 400 9px ui-monospace, "SFMono-Regular", Consolas, monospace; }
-.native-setting { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
-.native-setting strong { font-size: 12px; }
-.native-setting p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
-.native-setting .setting-error { color: var(--red); }
-.switch-control { position: relative; flex: 0 0 auto; width: 38px; height: 22px; cursor: pointer; }
-.switch-control input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.switch-track { display: block; width: 38px; height: 22px; background: #c8ced8; border-radius: 99px; transition: background .16s ease; }
-.switch-track::after { display: block; width: 16px; height: 16px; margin: 3px; content: ""; background: white; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .16s ease; }
-.switch-control input:checked + .switch-track { background: var(--blue); }
-.switch-control input:checked + .switch-track::after { transform: translateX(16px); }
-.switch-control input:focus-visible + .switch-track { outline: 3px solid rgba(49, 95, 203, .28); outline-offset: 3px; }
-.switch-control input:disabled + .switch-track { opacity: .55; cursor: wait; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .windows-card, .events-card { margin-top: 14px; }
 .window-list { margin-top: 16px; }

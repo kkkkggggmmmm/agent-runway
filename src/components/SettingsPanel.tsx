@@ -1,15 +1,9 @@
 interface SettingsPanelProps {
   reservePercent: number;
   onReserveChange: (value: number) => void;
-  desktop?: {
-    autostartEnabled: boolean;
-    autostartLoading: boolean;
-    autostartError: string | null;
-    onAutostartChange: (enabled: boolean) => void;
-  };
 }
 
-export const SettingsPanel = ({ reservePercent, onReserveChange, desktop }: SettingsPanelProps) => (
+export const SettingsPanel = ({ reservePercent, onReserveChange }: SettingsPanelProps) => (
   <section className="settings-card">
     <div className="card-heading compact">
       <div>
@@ -31,25 +25,5 @@ export const SettingsPanel = ({ reservePercent, onReserveChange, desktop }: Sett
       />
     </label>
     <div className="slider-scale" aria-hidden="true"><span>0%</span><span>30%</span></div>
-    {desktop ? (
-      <div className="native-setting">
-        <div>
-          <strong>ログイン時に起動</strong>
-          <p>ウィンドウを閉じてもトレイで監視を続けます</p>
-          {desktop.autostartError ? <p className="setting-error" role="alert">{desktop.autostartError}</p> : null}
-        </div>
-        <label className="switch-control">
-          <span className="visually-hidden">ログイン時にAgent Runwayを起動</span>
-          <input
-            type="checkbox"
-            role="switch"
-            checked={desktop.autostartEnabled}
-            disabled={desktop.autostartLoading}
-            onChange={(event) => desktop.onAutostartChange(event.currentTarget.checked)}
-          />
-          <span className="switch-track" aria-hidden="true" />
-        </label>
-      </div>
-    ) : null}
   </section>
 );
