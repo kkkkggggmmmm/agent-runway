@@ -16,8 +16,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const allowedOrigin = (origin: string | null): string => {
   if (origin === "http://localhost:5173") return origin;
   if (origin === "https://agent-runway.vercel.app") return origin;
+  if (origin === "https://agent-runway-mobile.keijimizoguchi.chatgpt.site") return origin;
   if (origin && /^https:\/\/agent-runway-[a-z0-9-]+\.vercel\.app$/i.test(origin)) return origin;
-  return "https://agent-runway.vercel.app";
+  return "https://agent-runway-mobile.keijimizoguchi.chatgpt.site";
 };
 
 const headersFor = (request: Request, noStore = false): HeadersInit => ({

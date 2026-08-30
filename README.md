@@ -28,7 +28,7 @@ Codexが標準位置にない場合、アプリ起動前に `CODEX_BIN` に実�
 ## iPhone / Android setup
 
 1. PC版Agent Runwayの「iPhone / Androidで見る」を有効にします。
-2. 表示されたQRコードをスマホで読み取ります。実際に使うURLは `https://agent-runway.vercel.app/#access_token=…` 形式です。
+2. 表示されたQRコードをスマホで読み取ります。実際に使うURLは `https://agent-runway-mobile.keijimizoguchi.chatgpt.site/#access_token=…` 形式です。
 3. iPhoneはSafariの共有メニューから「ホーム画面に追加」、Androidはブラウザの「アプリをインストール」を選びます。
 
 PC版はトレイで起動したままにしてください。PC版は更新時と5分ごとに、利用枠・観測時刻・リセット時刻だけを同期します。Codex認証、プロンプト、会話、ローカルパスは同期しません。接続コードを再発行または共有を停止すると、以前のリンクは直ちに無効になります。

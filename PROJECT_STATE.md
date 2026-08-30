@@ -32,6 +32,7 @@ Deterministic quota core + live local bridge + responsive dashboard.
 - installable PWA for iPhone and Android from the existing React UI
 - desktop-owned cloud-sync client; only quota snapshots leave the desktop
 - public PWA link backed by a private Supabase row and custom-authenticated Edge Function
+- hosted at `agent-runway-mobile.keijimizoguchi.chatgpt.site`; static shell is public, data remains token-gated
 - QR pairing with a 256-bit URL-fragment token and exact Bearer validation
 - service-worker app-shell cache and last-known live quota fallback
 - responsive safe-area and touch-target treatment

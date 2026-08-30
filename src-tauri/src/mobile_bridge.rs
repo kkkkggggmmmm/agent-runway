@@ -23,7 +23,7 @@ use crate::app_server::CodexAppServer;
 
 const CLOUD_SYNC_ENDPOINT: &str = "https://cjjxjoaugpmttwxmtgyp.supabase.co/functions/v1/agent-runway-mobile";
 const SUPABASE_PUBLISHABLE_KEY: &str = "sb_publishable_DvgeGVQ1Q3WHEnfpGuoRoA_nvYi9zu_";
-const PUBLIC_COMPANION_URL: &str = "https://agent-runway.vercel.app";
+const PUBLIC_COMPANION_URL: &str = "https://agent-runway-mobile.keijimizoguchi.chatgpt.site";
 const SYNC_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -121,7 +121,7 @@ impl MobileBridge {
             enabled: config.enabled,
             ready: runtime.ready,
             pairing_url: config.enabled.then(|| pairing_url(&config.share_token)),
-            hostname: config.enabled.then(|| "agent-runway.vercel.app".to_string()),
+            hostname: config.enabled.then(|| "agent-runway-mobile.keijimizoguchi.chatgpt.site".to_string()),
             error: runtime.error,
         }
     }
