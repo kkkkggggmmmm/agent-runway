@@ -190,7 +190,7 @@ export default function App() {
 
         <footer className="app-footer">
           <span>Private by default · No prompts or credentials shared</span>
-          <span>{desktop.isDesktop ? "Native tray active · " : "Mobile companion · "}Agent Runway v0.3.0</span>
+          <span>{desktop.isDesktop ? "Native tray active · " : "Mobile companion · "}Agent Runway v0.4.0</span>
         </footer>
       </main>
     </div>

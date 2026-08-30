@@ -1,5 +1,7 @@
 const MOBILE_TOKEN_KEY = "agent-runway:mobile-token:v1";
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,160}$/;
+export const CLOUD_SYNC_ENDPOINT = "https://cjjxjoaugpmttwxmtgyp.supabase.co/functions/v1/agent-runway-mobile";
+export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_DvgeGVQ1Q3WHEnfpGuoRoA_nvYi9zu_";
 
 const storage = (): Storage | null => {
   try {
@@ -35,9 +37,18 @@ export const disconnectMobileCompanion = (): void => {
 export const isMobileCompanion = (): boolean =>
   !window.location.hostname.match(/^(127\.0\.0\.1|localhost)$/) && getMobileAccessToken() !== null;
 
+export const isCloudMobileEntry = (): boolean =>
+  !window.location.hostname.match(/^(127\.0\.0\.1|localhost)$/);
+
 export const mobileAuthorizationHeaders = (): HeadersInit | undefined => {
   const token = getMobileAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : undefined;
 };
+
+export const cloudMobileHeaders = (): HeadersInit => ({
+  Accept: "application/json",
+  apikey: SUPABASE_PUBLISHABLE_KEY,
+  ...(mobileAuthorizationHeaders() ?? {}),
+});
 
 export const MOBILE_TOKEN_STORAGE_KEY = MOBILE_TOKEN_KEY;

@@ -1,9 +1,9 @@
 # PROJECT_STATE
 
 - project: Agent Runway
-- version: 0.3.0
-- date: 2026-08-29
-- state: MOBILE_COMPANION_CANDIDATE
+- version: 0.4.0
+- date: 2026-08-30
+- state: PUBLIC_MOBILE_LINK_CANDIDATE
 - canonical design: ../agent-runway-product-design-v0.1.md
 
 ## Native desktop slice
@@ -30,8 +30,8 @@ Deterministic quota core + live local bridge + responsive dashboard.
 ## Mobile companion slice
 
 - installable PWA for iPhone and Android from the existing React UI
-- desktop-owned loopback HTTP bridge embedded in the Tauri binary
-- automatic private Tailscale Serve HTTPS endpoint on port 8443
+- desktop-owned cloud-sync client; only quota snapshots leave the desktop
+- public PWA link backed by a private Supabase row and custom-authenticated Edge Function
 - QR pairing with a 256-bit URL-fragment token and exact Bearer validation
 - service-worker app-shell cache and last-known live quota fallback
 - responsive safe-area and touch-target treatment

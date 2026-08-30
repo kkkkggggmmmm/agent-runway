@@ -13,7 +13,8 @@
 - Never call private ChatGPT backend endpoints.
 - Never store prompts, thread contents, repository paths, or email addresses.
 - Bind the local bridge to loopback only.
-- Mobile access may relay quota snapshots only through private HTTPS and a revocable high-entropy token.
+- Mobile access may relay quota snapshots only through encrypted HTTPS and a revocable high-entropy token.
+- The cloud snapshot table must deny direct browser/table access; only the custom-authenticated Edge Function may read or write it.
 - Pairing secrets must stay out of query strings, server logs, and source control.
 - Desktop builds must use the documented `codex app-server` stdio protocol and discard stderr that may contain local paths.
 - Do not bundle, copy, or inspect the user's Codex authentication files.

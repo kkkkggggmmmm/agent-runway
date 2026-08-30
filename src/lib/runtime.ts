@@ -1,7 +1,13 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { RawRateLimitResponse } from "../core";
-import { mobileAuthorizationHeaders } from "./mobile";
+import {
+  CLOUD_SYNC_ENDPOINT,
+  cloudMobileHeaders,
+  getMobileAccessToken,
+  isCloudMobileEntry,
+  mobileAuthorizationHeaders,
+} from "./mobile";
 
 const RATE_LIMIT_EVENT = "agent-runway-rate-limits";
 
@@ -34,8 +40,21 @@ const fetchRateLimits = async (manual: boolean): Promise<RawRateLimitResponse> =
   return await response.json() as RawRateLimitResponse;
 };
 
+const fetchCloudRateLimits = async (): Promise<RawRateLimitResponse> => {
+  if (!getMobileAccessToken()) {
+    throw new Error("スマホ接続リンクが必要です。PC版Agent Runwayで表示されるQRコードを読み取ってください");
+  }
+  const response = await fetch(CLOUD_SYNC_ENDPOINT, {
+    method: "GET",
+    cache: "no-store",
+    headers: cloudMobileHeaders(),
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return await response.json() as RawRateLimitResponse;
+};
+
 export const readRateLimits = (manual: boolean): Promise<RawRateLimitResponse> => {
-  if (!isDesktopRuntime()) return fetchRateLimits(manual);
+  if (!isDesktopRuntime()) return isCloudMobileEntry() ? fetchCloudRateLimits() : fetchRateLimits(manual);
   return invoke<RawRateLimitResponse>(manual ? "refresh_rate_limits" : "get_rate_limits");
 };
 

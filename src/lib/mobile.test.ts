@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   consumeMobileAccessToken,
+  cloudMobileHeaders,
   getMobileAccessToken,
   mobileAuthorizationHeaders,
   MOBILE_TOKEN_STORAGE_KEY,
@@ -31,5 +32,15 @@ describe("mobile pairing token", () => {
     const token = "B".repeat(64);
     localStorage.setItem(MOBILE_TOKEN_STORAGE_KEY, token);
     expect(mobileAuthorizationHeaders()).toEqual({ Authorization: `Bearer ${token}` });
+  });
+
+  it("adds only public Supabase metadata alongside the bearer token", () => {
+    const token = "C".repeat(64);
+    localStorage.setItem(MOBILE_TOKEN_STORAGE_KEY, token);
+    expect(cloudMobileHeaders()).toEqual(expect.objectContaining({
+      Accept: "application/json",
+      apikey: expect.stringMatching(/^sb_publishable_/),
+      Authorization: `Bearer ${token}`,
+    }));
   });
 });

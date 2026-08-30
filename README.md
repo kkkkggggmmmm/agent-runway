@@ -2,7 +2,7 @@
 
 ChatGPT WorkとCodexの共有利用枠を、残量だけでなく「何日分先行しているか」「いつ枯渇するか」「今日あと何%使えるか」で判断するローカルダッシュボードです。
 
-## Desktop + mobile v0.3
+## Desktop + mobile v0.4
 
 - Windows: NSIS `.exe` / MSI `.msi` インストーラー
 - macOS: Universal `.dmg`（Apple Silicon / Intel）
@@ -13,7 +13,7 @@ ChatGPT WorkとCodexの共有利用枠を、残量だけでなく「何日分先
 - 二重起動を防止し、既存ウィンドウを前面へ復帰
 - Rustから `codex app-server` を直接起動するため、デスクトップ版の実行にNode.jsは不要
 - iPhone / Androidへホーム画面インストールできるPWA companion
-- Tailscale ServeによるプライベートHTTPS接続、QRコードペアリング、Bearer認証
+- 常設HTTPSリンク、QRコードペアリング、Bearer認証、いつでも無効化・再発行
 - スマホが一時的にオフラインでも最後の正常な利用枠を表示
 
 WorkとCodexを別々に推定配分せず、App Serverが返す共有利用枠を1本のメーターとして扱います。
@@ -22,18 +22,16 @@ WorkとCodexを別々に推定配分せず、App Serverが返す共有利用枠�
 
 - Codex CLIがインストール済みで、ChatGPTへサインイン済みであること
 - Windows 10以降、またはmacOS 10.15以降
-- スマホ表示ではPCとiPhone / Androidへ[Tailscale](https://tailscale.com/download)をインストールし、同じtailnetへサインイン
 
 Codexが標準位置にない場合、アプリ起動前に `CODEX_BIN` に実行ファイルの絶対パスを設定できます。macOS版は `/opt/homebrew/bin/codex`、`/usr/local/bin/codex`、`~/.local/bin/codex`、`~/.npm-global/bin/codex`、`~/.volta/bin/codex` も探索します。
 
 ## iPhone / Android setup
 
-1. PCとスマホでTailscaleへサインインし、同じtailnetに接続します。
-2. PC版Agent Runwayの「iPhone / Androidで見る」を有効にします。
-3. 表示されたQRコードをスマホで読み取ります。Agent RunwayはTailscale Serveの専用HTTPSポート `8443` を自動設定します。
-4. iPhoneはSafariの共有メニューから「ホーム画面に追加」、Androidはブラウザの「アプリをインストール」を選びます。
+1. PC版Agent Runwayの「iPhone / Androidで見る」を有効にします。
+2. 表示されたQRコードをスマホで読み取ります。実際に使うURLは `https://agent-runway.vercel.app/#access_token=…` 形式です。
+3. iPhoneはSafariの共有メニューから「ホーム画面に追加」、Androidはブラウザの「アプリをインストール」を選びます。
 
-PC版はトレイで起動したままにしてください。Tailscale Serveは公開インターネットへ開くFunnelではなく、同じtailnet内だけでローカルの `127.0.0.1:4317` へ中継します。接続コードを再発行すると、以前ペアリングしたスマホは切断されます。
+PC版はトレイで起動したままにしてください。PC版は更新時と5分ごとに、利用枠・観測時刻・リセット時刻だけを同期します。Codex認証、プロンプト、会話、ローカルパスは同期しません。接続コードを再発行または共有を停止すると、以前のリンクは直ちに無効になります。
 
 ## Installers
 
@@ -84,6 +82,6 @@ Web検証はESLint、35件の自動テスト、TypeScript、本番ビルドを�
 
 ## Local data and security
 
-デスクトップ版は公式の `codex app-server` stdio JSONLプロトコルを使い、OAuth認証ファイルを直接読みません。スマホへ共有するのはApp Serverが返した利用枠、観測時刻、リセット時刻だけです。接続コードはURLフラグメントで受け渡すためHTTPログへ送られず、以降はAuthorizationヘッダーで照合します。
+デスクトップ版は公式の `codex app-server` stdio JSONLプロトコルを使い、OAuth認証ファイルを直接読みません。スマホへ共有するのはApp Serverが返した利用枠、観測時刻、リセット時刻だけです。同期行にはブラウザから直接アクセスできず、専用Edge Functionが256ビット接続コードを照合して必要なスナップショットだけを返します。接続コードはURLフラグメントで受け渡すためHTTPログへ送られず、以降はAuthorizationヘッダーで照合します。
 
 ブラウザ保存領域に残すのは利用枠スナップショット、観測時刻、リセット時刻、予備枠設定、スマホ接続コードだけです。プロンプト、スレッド、リポジトリパス、メールアドレス、Codex認証情報は保存・共有しません。ローカルHTTPサーバーは引き続き `127.0.0.1` のみにbindし、App Serverのstderrもローカルパス混入を避けるため破棄します。

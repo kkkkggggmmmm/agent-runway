@@ -12,16 +12,22 @@ use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 async fn get_rate_limits(
     app_handle: AppHandle,
     client: State<'_, CodexAppServer>,
+    bridge: State<'_, MobileBridge>,
 ) -> Result<Value, String> {
-    client.latest_or_refresh(app_handle).await
+    let payload = client.latest_or_refresh(app_handle).await?;
+    bridge.sync_payload(payload.clone()).await;
+    Ok(payload)
 }
 
 #[tauri::command]
 async fn refresh_rate_limits(
     app_handle: AppHandle,
     client: State<'_, CodexAppServer>,
+    bridge: State<'_, MobileBridge>,
 ) -> Result<Value, String> {
-    client.refresh_with_start(app_handle).await
+    let payload = client.refresh_with_start(app_handle).await?;
+    bridge.sync_payload(payload.clone()).await;
+    Ok(payload)
 }
 
 #[tauri::command]

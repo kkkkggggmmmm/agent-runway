@@ -65,7 +65,7 @@ export const MobileAccessPanel = ({ info, loading, onEnabledChange, onRotateToke
       </div>
 
       <p className="mobile-access-copy">
-        認証情報はこのPCに残したまま、利用枠の数値だけをTailscaleの暗号化されたプライベート接続で共有します。
+        Codexの認証情報はこのPCに残したまま、利用枠の数値だけを暗号化された専用リンクへ同期します。リンクはいつでも停止・再発行できます。
       </p>
 
       {info.error ? <p className="setting-error mobile-error" role="alert">{info.error}</p> : null}
@@ -76,11 +76,10 @@ export const MobileAccessPanel = ({ info, loading, onEnabledChange, onRotateToke
           <div className="pairing-details">
             <strong>スマホでQRコードを読み取る</strong>
             <ol>
-              <li>PCとスマホで同じTailscaleネットワークへ接続</li>
-              <li>QRコードを読み取り、Agent Runwayを開く</li>
+              <li>このスマホでQRコードを読み取り、Agent Runwayを開く</li>
               <li>iPhoneは「ホーム画面に追加」、Androidは「インストール」</li>
             </ol>
-            <code className="pairing-host">{info.hostname}:8443</code>
+            <code className="pairing-host">{info.hostname}</code>
             <div className="pairing-actions">
               <button type="button" className="primary-button" onClick={() => void copyPairingUrl()}>{copied ? "コピー済み" : "接続URLをコピー"}</button>
               <button type="button" className="quiet-button" onClick={rotate}>コード再発行</button>
