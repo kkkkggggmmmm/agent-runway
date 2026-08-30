@@ -25,6 +25,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Verify release surfaces
+        run: npm run release:check
 
   build:
     needs: quality
@@ -58,15 +60,36 @@ jobs:
       - name: Build web and mobile companion assets
         run: npm run build
       - name: Rust tests
-        if: runner.os != 'Windows'
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        run: npm run desktop:test
       - name: Build native installer
         env:
           APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && '-' || '' }}
         run: npm run desktop:build -- ${{ matrix.build_args }}
+      - name: Generate installer checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v sha256sum >/dev/null 2>&1; then
+            hash_file() { sha256sum "$1"; }
+          else
+            hash_file() { shasum -a 256 "$1"; }
+          fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            find src-tauri/target/release/bundle/nsis src-tauri/target/release/bundle/msi -type f \( -name '*.exe' -o -name '*.msi' \) -print | sort > installer-files.txt
+          else
+            find src-tauri/target/universal-apple-darwin/release/bundle/dmg -type f -name '*.dmg' -print | sort > installer-files.txt
+          fi
+          test -s installer-files.txt
+          while IFS= read -r file; do
+            hash_file "$file"
+          done < installer-files.txt > installer-sha256.txt
+          test -s installer-sha256.txt
+          rm installer-files.txt
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact_paths }}
+          path: |
+            ${{ matrix.artifact_paths }}
+            installer-sha256.txt
           if-no-files-found: error
           retention-days: 30
