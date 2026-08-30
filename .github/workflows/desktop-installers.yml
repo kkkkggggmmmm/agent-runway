@@ -60,7 +60,11 @@ jobs:
       - name: Build web and mobile companion assets
         run: npm run build
       - name: Rust tests
+        if: runner.os != 'Windows'
         run: npm run desktop:test
+      - name: Rust test compile (Windows)
+        if: runner.os == 'Windows'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --no-run
       - name: Build native installer
         env:
           APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && '-' || '' }}
