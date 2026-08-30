@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { createDemoRateLimits } from "./core";
+import { SNAPSHOT_CACHE_KEY } from "./lib/snapshotCache";
 
 const responseWith = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), {
   status,
@@ -54,5 +55,17 @@ describe("Agent Runway dashboard", () => {
     expect(await screen.findByRole("heading", { name: "Codexへ接続できません" })).toBeInTheDocument();
     expect(screen.getByText("Codex CLIが見つかりません")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "再接続" })).toBeInTheDocument();
+  });
+
+  it("keeps the last live quota visible when a phone is temporarily offline", async () => {
+    const cached = { ...createDemoRateLimits(), source: "live" as const, observedAt: Date.now() };
+    localStorage.setItem(SNAPSHOT_CACHE_KEY, JSON.stringify(cached));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("オフラインです")));
+
+    render(<App />);
+
+    expect(screen.getAllByText("58%").length).toBeGreaterThan(0);
+    expect(await screen.findByText(/最新値の再取得に失敗しました：オフラインです/)).toBeInTheDocument();
+    expect(screen.queryByText("DEMO DATA")).not.toBeInTheDocument();
   });
 });

@@ -8,12 +8,16 @@ import {
 import { EmptyState } from "./components/EmptyState";
 import { GaugeIcon, ClockIcon, ShieldIcon } from "./components/Icons";
 import { HeroPanel, type SignalTone } from "./components/HeroPanel";
+import { InstallPrompt } from "./components/InstallPrompt";
 import { LimitWindows } from "./components/LimitWindows";
 import { MetricCard } from "./components/MetricCard";
+import { MobileAccessPanel } from "./components/MobileAccessPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { StatusHeader } from "./components/StatusHeader";
 import { WeeklyStrip } from "./components/WeeklyStrip";
 import { useBudgetSettings } from "./hooks/useBudgetSettings";
+import { useDesktopPreferences } from "./hooks/useDesktopPreferences";
+import { useMobileAccess } from "./hooks/useMobileAccess";
 import { useNow } from "./hooks/useNow";
 import { useQuotaSnapshot } from "./hooks/useQuotaSnapshot";
 import {
@@ -48,6 +52,8 @@ const metricEmphasis = (tone: SignalTone): "neutral" | "positive" | "warning" | 
 export default function App() {
   const { snapshot, history, events, loading, refreshing, error, refresh } = useQuotaSnapshot();
   const { settings, setReservePercent } = useBudgetSettings();
+  const desktop = useDesktopPreferences();
+  const mobileAccess = useMobileAccess();
   const now = useNow();
 
   if (!snapshot) return <EmptyState loading={loading} error={error} onRetry={refresh} />;
@@ -97,6 +103,7 @@ export default function App() {
         onRefresh={refresh}
       />
       <main className="dashboard">
+        <InstallPrompt />
         {snapshot.source === "demo" ? (
           <aside className="demo-banner">これはfixtureによるデモ表示です。実アカウントの値ではありません。</aside>
         ) : null}
@@ -139,8 +146,26 @@ export default function App() {
 
         <section className="lower-grid">
           <WeeklyStrip metric={pace} />
-          <SettingsPanel reservePercent={settings.reservePercent} onReserveChange={setReservePercent} />
+          <SettingsPanel
+            reservePercent={settings.reservePercent}
+            onReserveChange={setReservePercent}
+            desktop={desktop.isDesktop ? {
+              autostartEnabled: desktop.autostartEnabled,
+              autostartLoading: desktop.autostartLoading,
+              autostartError: desktop.autostartError,
+              onAutostartChange: (enabled) => void desktop.updateAutostart(enabled),
+            } : undefined}
+          />
         </section>
+
+        {mobileAccess.isDesktop ? (
+          <MobileAccessPanel
+            info={mobileAccess.info}
+            loading={mobileAccess.loading}
+            onEnabledChange={(enabled) => void mobileAccess.updateEnabled(enabled)}
+            onRotateToken={() => void mobileAccess.rotateToken()}
+          />
+        ) : null}
 
         <LimitWindows windows={snapshot.windows} />
 
@@ -164,8 +189,8 @@ export default function App() {
         ) : null}
 
         <footer className="app-footer">
-          <span>Local only · No prompts or credentials stored</span>
-          <span>Agent Runway v0.1.0</span>
+          <span>Private by default · No prompts or credentials shared</span>
+          <span>{desktop.isDesktop ? "Native tray active · " : "Mobile companion · "}Agent Runway v0.3.0</span>
         </footer>
       </main>
     </div>

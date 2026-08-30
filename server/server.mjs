@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CodexAppServerClient } from "./app-server-client.mjs";
 import { createDemoRateLimits } from "./demo-fixture.mjs";
+import { createMobileAccessPolicy } from "./mobile-access.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, "..");
@@ -12,6 +13,11 @@ const port = Number.parseInt(process.env.AGENT_RUNWAY_PORT || "4317", 10);
 if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error("AGENT_RUNWAY_PORT must be a valid TCP port");
 const demoMode = process.env.AGENT_RUNWAY_DEMO === "1";
 const client = demoMode ? null : new CodexAppServerClient();
+const accessPolicy = createMobileAccessPolicy({
+  port,
+  publicOrigin: process.env.AGENT_RUNWAY_PUBLIC_ORIGIN,
+  mobileToken: process.env.AGENT_RUNWAY_MOBILE_TOKEN,
+});
 
 const json = (response, status, payload) => {
   response.writeHead(status, {
@@ -23,14 +29,6 @@ const json = (response, status, payload) => {
   response.end(JSON.stringify(payload));
 };
 
-const allowedRequest = (request) => {
-  const host = request.headers.host || "";
-  if (!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(host)) return false;
-  const origin = request.headers.origin;
-  if (!origin) return true;
-  return new RegExp(`^http://(127\\.0\\.0\\.1|localhost):(${port}|5173)$`).test(origin);
-};
-
 const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -39,6 +37,7 @@ const contentTypes = new Map([
   [".png", "image/png"],
   [".ico", "image/x-icon"],
   [".json", "application/json; charset=utf-8"],
+  [".webmanifest", "application/manifest+json; charset=utf-8"],
 ]);
 
 const serveStatic = async (request, response, url) => {
@@ -66,9 +65,12 @@ const serveStatic = async (request, response, url) => {
     const contents = await readFile(filePath);
     response.writeHead(200, {
       "Content-Type": contentTypes.get(path.extname(filePath)) || "application/octet-stream",
-      "Cache-Control": filePath.endsWith("index.html") ? "no-cache" : "public, max-age=31536000, immutable",
+      "Cache-Control": filePath.endsWith("index.html") || filePath.endsWith("sw.js") || filePath.endsWith("manifest.webmanifest")
+        ? "no-cache"
+        : "public, max-age=31536000, immutable",
       "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; worker-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     });
     response.end(request.method === "HEAD" ? undefined : contents);
   } catch {
@@ -80,12 +82,17 @@ const serveStatic = async (request, response, url) => {
 };
 
 const server = http.createServer(async (request, response) => {
-  if (!allowedRequest(request)) {
+  if (!accessPolicy.allowedRequest(request)) {
     json(response, 403, { error: "Loopback access only" });
     return;
   }
 
   const url = new URL(request.url || "/", `http://${request.headers.host}`);
+  if (url.pathname.startsWith("/api/") && !accessPolicy.authorizedApiRequest(request)) {
+    response.setHeader("WWW-Authenticate", "Bearer");
+    json(response, 401, { error: "スマホ接続コードが無効です。PCで新しいQRコードを読み取ってください" });
+    return;
+  }
   if (request.method === "GET" && url.pathname === "/api/health") {
     json(response, 200, demoMode
       ? { status: "demo", source: "demo" }
