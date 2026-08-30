@@ -1,7 +1,7 @@
 {
   "name": "agent-runway",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.4.0",
   "type": "module",
   "engines": {
     "node": ">=22.12"
@@ -10,23 +10,31 @@
     "dev": "vite",
     "bridge": "node server/server.mjs",
     "dev:all": "concurrently -k -n bridge,ui -c yellow,cyan \"npm:bridge\" \"npm:dev\"",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/copy-mobile-assets.mjs",
     "preview": "vite preview",
     "start": "node server/server.mjs",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "desktop:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "check": "npm run lint && npm run test && npm run build"
+    "check": "npm run lint && npm run test && npm run build",
+    "release:check": "node scripts/release-check.mjs"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "qrcode": "1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@tauri-apps/cli": "2.11.4",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/node": "26.4.0",
+    "@types/qrcode": "1.5.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
     "@vitejs/plugin-react": "6.1.1",

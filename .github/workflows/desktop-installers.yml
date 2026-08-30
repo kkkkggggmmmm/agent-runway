@@ -1,0 +1,99 @@
+name: Desktop installers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-installers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Verify release surfaces
+        run: npm run release:check
+
+  build:
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: agent-runway-windows-x64
+            build_args: --bundles nsis,msi
+            artifact_paths: |
+              src-tauri/target/release/bundle/nsis/*-setup.exe
+              src-tauri/target/release/bundle/msi/*.msi
+          - os: macos-14
+            artifact: agent-runway-macos-universal
+            build_args: --target universal-apple-darwin --bundles dmg
+            artifact_paths: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Select stable Rust
+        run: rustup default stable
+      - name: Add universal macOS targets
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - name: Build web and mobile companion assets
+        run: npm run build
+      - name: Rust tests
+        if: runner.os != 'Windows'
+        run: npm run desktop:test
+      - name: Rust test compile (Windows)
+        if: runner.os == 'Windows'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --no-run
+      - name: Build native installer
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && '-' || '' }}
+        run: npm run desktop:build -- ${{ matrix.build_args }}
+      - name: Generate installer checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v sha256sum >/dev/null 2>&1; then
+            hash_file() { sha256sum "$1"; }
+          else
+            hash_file() { shasum -a 256 "$1"; }
+          fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            find src-tauri/target/release/bundle/nsis src-tauri/target/release/bundle/msi -type f \( -name '*.exe' -o -name '*.msi' \) -print | sort > installer-files.txt
+          else
+            find src-tauri/target/universal-apple-darwin/release/bundle/dmg -type f -name '*.dmg' -print | sort > installer-files.txt
+          fi
+          test -s installer-files.txt
+          while IFS= read -r file; do
+            hash_file "$file"
+          done < installer-files.txt > installer-sha256.txt
+          test -s installer-sha256.txt
+          rm installer-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact_paths }}
+            installer-sha256.txt
+          if-no-files-found: error
+          retention-days: 30

@@ -62,7 +62,7 @@ export class CodexAppServerClient extends EventEmitter {
         clientInfo: {
           name: "agent_runway",
           title: "Agent Runway",
-          version: "0.1.0",
+          version: "0.3.0",
         },
         capabilities: {
           optOutNotificationMethods: [
