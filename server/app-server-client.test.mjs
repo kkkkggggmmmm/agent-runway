@@ -40,4 +40,24 @@ describe("CodexAppServerClient", () => {
     expect(client.status).toBe("unavailable");
     expect(client.lastError).toBe("Codex CLIが見つかりません");
   });
+
+  it("uses the documented device-code login without retaining account identity", async () => {
+    const client = new CodexAppServerClient({
+      command: process.execPath,
+      appServerArgs: [path.join(here, "test", "fake-app-server.mjs")],
+    });
+    clients.push(client);
+
+    await client.start();
+    await expect(client.getAccount()).resolves.toBeNull();
+    await expect(client.startDeviceCodeLogin()).resolves.toMatchObject({
+      status: "pending",
+      verificationUrl: "https://auth.openai.com/codex/device",
+      userCode: "FAKE-1234",
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(client.accountSnapshot().account).toEqual({ type: "chatgpt", planType: "pro" });
+    expect(JSON.stringify(client.accountSnapshot())).not.toContain("do-not-retain@example.test");
+  });
 });

@@ -1,9 +1,9 @@
 # PROJECT_STATE
 
 - project: Agent Runway
-- version: 0.4.0
-- date: 2026-08-30
-- state: PUBLIC_MOBILE_LINK_CANDIDATE
+- version: 0.5.0
+- date: 2026-09-03
+- state: CLOUD_BROKER_IMPLEMENTED_UNDEPLOYED
 - canonical design: ../agent-runway-product-design-v0.1.md
 
 ## Native desktop slice
@@ -21,7 +21,7 @@
 Deterministic quota core + live local bridge + responsive dashboard.
 
 - `npm run check`: pass
-- automated tests: 35 pass
+- automated tests: 42 pass
 - production build: pass
 - demo HTTP/API/CSP integration: pass
 - missing Codex CLI recovery: pass
@@ -38,6 +38,16 @@ Deterministic quota core + live local bridge + responsive dashboard.
 - responsive safe-area and touch-target treatment
 - no Codex or ChatGPT credential material leaves the desktop
 
+## Cloud Broker slice
+
+- smartphone-only PWA route with no Mac, Tailscale, or QR requirement after setup
+- private long-running container owns the documented Codex App Server stdio process; public internet never reaches App Server directly
+- one-time URL-fragment bootstrap token establishes an HttpOnly, Secure, SameSite=Strict mobile session and is then invalidated in the container's non-credential state volume
+- OpenAI device-code login is shown only to the paired phone; app-server alone manages its own auth state on the host-owned persistent volume
+- the PWA receives only auth readiness, plan type, and App Server quota snapshots; it never receives prompts, threads, repositories, email, OAuth files, or generic agent execution
+- Docker image, persistent-volume Compose contract, unit tests, and static-shell runtime configuration are implemented
+- **NOT DEPLOYED:** a TLS-enabled persistent container host and its one-time bootstrap link remain required before this mode can be activated
+
 ## Environment note
 
 The current build environment has Node.js but does not have Rust or the Codex CLI. Native compilation and installer generation therefore run on GitHub-hosted Windows and macOS runners. The App Server bridge is covered by fake stdio integration tests; the user has separately confirmed the live authenticated account path.
@@ -45,3 +55,5 @@ The current build environment has Node.js but does not have Rust or the Codex CL
 ## Release follow-up
 
 Add Apple Developer ID/notarization and Windows Authenticode credentials before broad public distribution.
+
+Before activating Cloud Broker, provision a dedicated private container host with an encrypted persistent volume, create deployment-only environment secrets, verify mobile browser QA over HTTPS, and retain the existing desktop snapshot companion as a rollback path.

@@ -17,6 +17,8 @@ describe("Agent Runway dashboard", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    window.__AGENT_RUNWAY_RUNTIME__ = undefined;
+    window.history.replaceState(null, "", "/");
   });
 
   it("renders the shared weekly allowance and clearly labels demo data", async () => {
@@ -67,5 +69,49 @@ describe("Agent Runway dashboard", () => {
     expect(screen.getAllByText("58%").length).toBeGreaterThan(0);
     expect(await screen.findByText(/最新値の再取得に失敗しました：オフラインです/)).toBeInTheDocument();
     expect(screen.queryByText("DEMO DATA")).not.toBeInTheDocument();
+  });
+
+  it("pairs the standalone phone PWA from a one-time URL fragment", async () => {
+    const setupToken = "A".repeat(64);
+    window.__AGENT_RUNWAY_RUNTIME__ = { mode: "cloud-broker" };
+    window.history.replaceState(null, "", `/#setup=${setupToken}`);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(responseWith({ ok: true }))
+      .mockResolvedValueOnce(responseWith({ state: "signed_out" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    expect(await screen.findByRole("button", { name: "OpenAIで接続する" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("");
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/session/bootstrap", expect.objectContaining({
+      method: "POST",
+      credentials: "same-origin",
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/status", expect.objectContaining({
+      credentials: "same-origin",
+    }));
+  });
+
+  it("shows the OpenAI device-code screen before exposing quota data", async () => {
+    window.__AGENT_RUNWAY_RUNTIME__ = { mode: "cloud-broker" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(responseWith({ state: "signed_out" }))
+      .mockResolvedValueOnce(responseWith({
+        state: "login_pending",
+        verificationUrl: "https://auth.openai.com/codex/device",
+        userCode: "TEST-1234",
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "OpenAIで接続する" }));
+    expect(await screen.findByText("TEST-1234")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "利用枠を再取得" })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/login/start", expect.objectContaining({
+      method: "POST",
+      credentials: "same-origin",
+    }));
   });
 });

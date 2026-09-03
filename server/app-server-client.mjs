@@ -22,6 +22,8 @@ export class CodexAppServerClient extends EventEmitter {
     this.status = "idle";
     this.latest = null;
     this.lastError = null;
+    this.account = null;
+    this.login = null;
   }
 
   async start() {
@@ -62,7 +64,7 @@ export class CodexAppServerClient extends EventEmitter {
         clientInfo: {
           name: "agent_runway",
           title: "Agent Runway",
-          version: "0.3.0",
+          version: "0.5.0",
         },
         capabilities: {
           optOutNotificationMethods: [
@@ -109,6 +111,67 @@ export class CodexAppServerClient extends EventEmitter {
       this.emit("status", this.snapshot());
       return null;
     }
+  }
+
+  async getAccount() {
+    if (!this.#process || this.status === "unavailable") return null;
+    const result = await this.#request("account/read", { refreshToken: false });
+    const account = result?.account;
+    // The UI only needs the auth kind and plan. Do not retain account email or
+    // any credential material returned by the App Server.
+    this.account = account && typeof account === "object"
+      ? {
+        type: typeof account.type === "string" ? account.type : null,
+        planType: typeof account.planType === "string" ? account.planType : null,
+      }
+      : null;
+    this.emit("account", this.accountSnapshot());
+    return this.account;
+  }
+
+  async startDeviceCodeLogin() {
+    if (!this.#process || this.status === "unavailable") {
+      throw new Error(this.lastError || "Codex App Serverへ接続できません");
+    }
+    if (this.login?.status === "pending") return this.login;
+
+    const result = await this.#request("account/login/start", { type: "chatgptDeviceCode" });
+    if (
+      result?.type !== "chatgptDeviceCode"
+      || typeof result.loginId !== "string"
+      || typeof result.verificationUrl !== "string"
+      || typeof result.userCode !== "string"
+    ) {
+      throw new Error("デバイスコード認証を開始できません");
+    }
+    this.login = {
+      status: "pending",
+      loginId: result.loginId,
+      verificationUrl: result.verificationUrl,
+      userCode: result.userCode,
+    };
+    this.emit("login", this.loginSnapshot());
+    return this.login;
+  }
+
+  accountSnapshot() {
+    return {
+      account: this.account ? { ...this.account } : null,
+      login: this.loginSnapshot(),
+      status: this.status,
+      error: this.lastError,
+    };
+  }
+
+  loginSnapshot() {
+    if (!this.login) return null;
+    const { status, verificationUrl, userCode, error } = this.login;
+    return {
+      status,
+      ...(verificationUrl ? { verificationUrl } : {}),
+      ...(userCode ? { userCode } : {}),
+      ...(error ? { error } : {}),
+    };
   }
 
   snapshot() {
@@ -176,6 +239,29 @@ export class CodexAppServerClient extends EventEmitter {
       clearTimeout(this.#refreshTimer);
       this.#refreshTimer = setTimeout(() => void this.refresh(), 400);
       this.#refreshTimer.unref?.();
+      return;
+    }
+
+    if (message.method === "account/login/completed") {
+      if (!this.login || message.params?.loginId !== this.login.loginId) return;
+      if (message.params?.success) {
+        this.login = { status: "completed" };
+        void this.getAccount().then(() => void this.refresh()).catch(() => undefined);
+      } else {
+        this.login = {
+          status: "failed",
+          error: typeof message.params?.error === "string" ? message.params.error : "認証に失敗しました",
+        };
+      }
+      this.emit("login", this.loginSnapshot());
+      return;
+    }
+
+    if (message.method === "account/updated") {
+      const authMode = typeof message.params?.authMode === "string" ? message.params.authMode : null;
+      const planType = typeof message.params?.planType === "string" ? message.params.planType : null;
+      this.account = authMode ? { type: authMode, planType } : null;
+      this.emit("account", this.accountSnapshot());
     }
   }
 
