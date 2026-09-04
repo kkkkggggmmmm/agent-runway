@@ -24,7 +24,7 @@ const versions = [
 if (new Set(versions.map(([, version]) => version)).size !== 1) {
   fail(`version mismatch: ${versions.map(([file, version]) => `${file}=${version}`).join(", ")}`);
 }
-if (packageJson.version !== "0.4.0") fail(`expected release version 0.4.0, got ${packageJson.version}`);
+if (packageJson.version !== "0.5.0") fail(`expected release version 0.5.0, got ${packageJson.version}`);
 if (hosting.static?.directory !== "dist") fail("hosting manifest must publish dist");
 if (!/^appgprj_[A-Za-z0-9]+$/.test(hosting.project_id ?? "")) fail("hosting manifest must identify the existing Sites project");
 
