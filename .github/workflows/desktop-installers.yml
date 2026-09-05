@@ -28,6 +28,33 @@ jobs:
       - name: Verify release surfaces
         run: npm run release:check
 
+  cloud-image:
+    needs: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Cloud Broker image
+        run: docker build --tag agent-runway-cloud:test .
+      - name: Verify unprivileged runtime and health endpoint
+        run: |
+          set -euo pipefail
+          container_id="$(docker run --detach \
+            --publish 127.0.0.1:18080:8080 \
+            --env AGENT_RUNWAY_BOOTSTRAP_TOKEN="$(printf 'b%.0s' {1..64})" \
+            --env AGENT_RUNWAY_SESSION_SECRET="$(printf 's%.0s' {1..64})" \
+            agent-runway-cloud:test)"
+          trap 'docker logs "$container_id"; docker rm --force "$container_id"' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/api/health | grep --quiet '"status":"ok"'; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$(docker exec "$container_id" id -u)" = "10001"
+
   build:
     needs: quality
     strategy:

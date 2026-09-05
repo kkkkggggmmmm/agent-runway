@@ -38,7 +38,7 @@ PC版はトレイで起動したままにしてください。PC版は更新時�
 
 Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠を更新するための単一ユーザー用構成です。PWAと内部のCodex App Serverを同じTLSドメインで動かし、App Serverは外部へ公開しません。
 
-1. Docker対応の**永続コンテナホスト**を用意し、`/home/agentrunway` を非公開の永続ボリュームとして割り当てます。
+1. Docker対応の**永続コンテナホスト**を用意し、`/home/agentrunway` を非公開の永続ボリュームとして割り当てます。推奨のFly.io設定はリポジトリの `fly.toml` に用意済みです。
 2. それぞれ異なる64文字以上の `AGENT_RUNWAY_BOOTSTRAP_TOKEN` と `AGENT_RUNWAY_SESSION_SECRET` をホストのシークレットとして設定します。例：`openssl rand -hex 32`
 3. コンテナをHTTPSドメインへ公開し、`https://<your-domain>/api/health` が `{"status":"ok"}` を返すことを確認します。
 4. 初回だけ `https://<your-domain>/#setup=<AGENT_RUNWAY_BOOTSTRAP_TOKEN>` をこのスマホで開きます。トークンはURLフラグメントに置かれ、サーバーログに送られず、接続後は無効化されます。
@@ -46,7 +46,7 @@ Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠�
 
 Cloud BrokerのPWAが取得・表示するのは認証の準備状態、プラン種別、App Serverの利用枠だけです。会話、プロンプト、スレッド、リポジトリ、メールアドレス、OAuthファイルはブラウザにもアプリのデータベースにも保存しません。
 
-`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。詳細は [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
+`Deploy cloud broker` GitHub Actionは手動実行専用で、対象アプリだけに限定したFlyデプロイトークンを使います。`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。初回設定のコマンドは [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
 
 ## Installers
 
@@ -93,7 +93,7 @@ npm run check
 npm run desktop:test
 ```
 
-Web検証はESLint、42件の自動テスト、TypeScript、本番ビルドを実行します。Rustテストは週次ウィンドウ判定、JSONL App Server接続、更新通知、CLI不在時の復旧状態、モバイル接続コードを検証します。
+Web検証はESLint、45件の自動テスト、TypeScript、本番ビルドを実行します。Rustテストは週次ウィンドウ判定、JSONL App Server接続、更新通知、CLI不在時の復旧状態、モバイル接続コードを検証します。CIではCloud BrokerのDockerイメージも起動し、非root実行とヘルスチェックを確認します。
 
 ## Local data and security
 

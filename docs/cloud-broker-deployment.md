@@ -22,6 +22,25 @@ Use a private container host that provides all of the following.
 
 The persistent volume contains only two classes of state: the Codex App Server's own managed authentication state and Agent Runway's non-credential `bootstrapConsumed` marker. Agent Runway never reads, copies, serializes, or uploads the App Server authentication files.
 
+## Recommended host: Fly.io
+
+The checked-in `fly.toml` is the supported production configuration. It uses the Tokyo region, one always-running 1 GB shared-CPU Machine, HTTPS at the Fly edge, and a dedicated 1 GB volume mounted at `/home/agentrunway`. The placeholder `app` value is always overridden with `-a`; do not rename the app to an account-identifying name.
+
+Fly.io requires an account with billing enabled for a continuously running Machine. Complete the following one-time setup on your own computer. Never paste a Fly token, bootstrap token, session secret, password, or one-time code into chat.
+
+Install `flyctl`, sign in using the browser opened by the CLI, then create an anonymous app name:
+
+```bash
+fly auth login
+fly apps create --generate-name
+```
+
+Record the generated app name as `<app-name>`. Create the private volume in Tokyo:
+
+```bash
+fly volumes create agent_runway_state --app <app-name> --region nrt --size 1
+```
+
 ## Configure and deploy
 
 Generate two independent secrets locally:
@@ -31,7 +50,44 @@ openssl rand -hex 32
 openssl rand -hex 32
 ```
 
-Set them in the host's protected environment-variable UI:
+Set them directly as protected Fly secrets. Use the two different values printed by the earlier commands; do not save them in the repository:
+
+```bash
+fly secrets set --app <app-name> \
+  AGENT_RUNWAY_BOOTSTRAP_TOKEN=<first-value> \
+  AGENT_RUNWAY_SESSION_SECRET=<second-value>
+```
+
+Deploy the first release and verify the non-sensitive health endpoint:
+
+```bash
+fly deploy --remote-only --app <app-name>
+curl --fail https://<app-name>.fly.dev/api/health
+```
+
+The result must be `{"status":"ok"}`. Fly provides the `fly.dev` TLS certificate; no custom domain is needed.
+
+### Optional GitHub deployment button
+
+After the first deployment, create a deploy token limited to this app. A 90-day expiry avoids a long-lived all-account credential:
+
+```bash
+fly tokens create deploy --app <app-name> \
+  --name "agent-runway-github" --expiry 2160h
+```
+
+In the GitHub repository, open **Settings → Secrets and variables → Actions** and add:
+
+- Repository secret `FLY_API_TOKEN`: the complete deploy-token output.
+- Repository variable `FLY_APP_NAME`: the generated app name.
+
+Do not add the bootstrap or session secrets to GitHub. Once this branch is merged into the default branch, run **Actions → Deploy cloud broker → Run workflow**. The workflow validates `fly.toml`, deploys with the app-scoped token, and confirms `/api/health` before succeeding.
+
+For another release, use that workflow again. Rotate the deploy token before its expiry and revoke the old token in Fly.
+
+### Generic host configuration
+
+For a different compatible container host, set these protected environment variables:
 
 ```text
 AGENT_RUNWAY_BOOTSTRAP_TOKEN=<first value>
@@ -48,7 +104,7 @@ Use `GET /api/health` as the deployment health check. It returns no account or q
 1. In the phone browser, open the one-time link below. Do not send it through a public channel.
 
    ```text
-   https://<deployment-domain>/#setup=<AGENT_RUNWAY_BOOTSTRAP_TOKEN>
+   https://<app-name>.fly.dev/#setup=<AGENT_RUNWAY_BOOTSTRAP_TOKEN>
    ```
 
 2. The PWA exchanges the fragment token over HTTPS for an HttpOnly, Secure, SameSite=Strict session cookie and records the bootstrap token as consumed.
