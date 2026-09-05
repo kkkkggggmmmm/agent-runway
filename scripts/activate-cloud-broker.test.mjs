@@ -16,6 +16,7 @@ describe("Cloud Broker activation helper", () => {
     expect(source).toContain('type: "svg"');
     expect(source).toContain("mkdtemp(path.join(os.tmpdir(), \"agent-runway-phone-\"))");
     expect(source).toContain("await rm(temporaryDirectory, { recursive: true, force: true })");
+    expect(source).toContain('answer.trim() === "DONE"');
     expect(source).not.toMatch(/console\.log\([^\n]*setupUrl/);
     expect(source).not.toContain("execSync");
   });

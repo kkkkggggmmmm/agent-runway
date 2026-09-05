@@ -30,7 +30,7 @@ Fly.io requires an account with billing enabled for a continuously running Machi
 
 ### Fastest first activation
 
-On a Mac with Node.js 22 and Git installed, run the activation helper from a fresh clone. If needed, first install Fly CLI with `brew install flyctl`.
+On a Mac with Node.js 22 and Git installed, run the activation helper from a fresh clone. If `flyctl` is not installed, use the official installer `curl -L https://fly.io/install.sh | sh`, then apply the PATH command that it prints.
 
 ```bash
 git clone https://github.com/kkkkggggmmmm/agent-runway.git
@@ -38,7 +38,7 @@ cd agent-runway
 npm ci && npm run cloud:activate
 ```
 
-It opens the normal Fly login in the local browser if required, asks for an explicit `DEPLOY` confirmation before incurring costs, creates an anonymous app name, creates the encrypted Tokyo volume, generates the two secrets locally, deploys remotely, verifies health, and opens a local one-time QR code for the phone. The QR is held only in a `0700` temporary directory and is deleted when the terminal prompt is confirmed. It never prints or uploads the bootstrap link.
+It opens the normal Fly login in the local browser if required, asks for an explicit `DEPLOY` confirmation before incurring costs, creates an anonymous app name, creates the encrypted Tokyo volume, generates the two secrets locally, deploys remotely, verifies health, and opens a local one-time QR code for the phone. The QR is held only in a `0700` temporary directory and is deleted only after the owner explicitly types `DONE`. It never prints or uploads the bootstrap link.
 
 After scanning the QR code, complete the OpenAI device-code sign-in on the phone, then install the PWA. The rest of this document is the manual equivalent and recovery reference.
 
@@ -140,6 +140,7 @@ The fragment is removed from the visible URL before the dashboard begins polling
 
 ## Recovery and revocation
 
+- To reissue an initial QR without creating a second app, run `npm run cloud:repair -- --app <app-name>` from an updated clone. It deploys the current PWA, invalidates only the old bootstrap token, preserves the Cloud Broker's OpenAI state and existing mobile sessions, and opens a new local QR code.
 - To revoke the paired phone, rotate `AGENT_RUNWAY_SESSION_SECRET` and redeploy.
 - To issue a new phone bootstrap link, rotate both secrets and redeploy. The existing persistent App Server volume may remain mounted so the user does not need to repeat OpenAI login.
 - To revoke the OpenAI session itself, remove the provider volume only after deciding to clear the login intentionally. Removing the volume deletes the managed App Server sign-in and cannot be undone.

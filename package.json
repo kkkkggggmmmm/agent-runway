@@ -17,6 +17,7 @@
     "desktop:build": "tauri build",
     "desktop:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "cloud:activate": "node scripts/activate-cloud-broker.mjs",
+    "cloud:repair": "node scripts/repair-cloud-broker.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",

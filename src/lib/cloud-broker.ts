@@ -1,5 +1,7 @@
 const RUNTIME_MODE_KEY = "agent-runway:runtime-mode:v1";
 
+export const isCloudBrokerHost = (hostname: string): boolean => hostname.endsWith(".fly.dev");
+
 export type CloudBrokerState = "ready" | "signed_out" | "login_pending" | "unavailable";
 
 export interface CloudBrokerStatus {
@@ -30,7 +32,11 @@ const storage = (): Storage | null => {
 export const isCloudBrokerRuntime = (): boolean => {
   if (typeof window === "undefined") return false;
   return window.__AGENT_RUNWAY_RUNTIME__?.mode === "cloud-broker"
-    || storage()?.getItem(RUNTIME_MODE_KEY) === "cloud-broker";
+    || storage()?.getItem(RUNTIME_MODE_KEY) === "cloud-broker"
+    // The supported Fly deployment is always a Cloud Broker. This fallback
+    // keeps an old cached runtime-config.js from sending a new phone to the
+    // legacy desktop-companion screen.
+    || isCloudBrokerHost(window.location.hostname);
 };
 
 const responseError = async (response: Response): Promise<CloudBrokerClientError> => {
