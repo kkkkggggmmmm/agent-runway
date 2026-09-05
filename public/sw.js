@@ -1,4 +1,4 @@
-const CACHE_NAME = "agent-runway-shell-v5";
+const CACHE_NAME = "agent-runway-shell-v6";
 const SHELL_URLS = ["/", "/manifest.webmanifest", "/app-icon.svg", "/app-icon-256.png", "/app-icon-512.png"];
 
 self.addEventListener("install", (event) => {
