@@ -15,7 +15,7 @@ ChatGPT WorkとCodexの共有利用枠を、残量だけでなく「何日分先
 - iPhone / Androidへホーム画面インストールできるPWA companion
 - 常設HTTPSリンク、QRコードペアリング、Bearer認証、いつでも無効化・再発行
 - スマホが一時的にオフラインでも最後の正常な利用枠を表示
-- **Cloud Broker mode**：Macを起動せず、スマホ単独で利用枠を更新するPWA
+- **Cloud Broker mode**：MacやTailscaleなしで、スマホ単独で利用枠を更新するPWA
 
 WorkとCodexを別々に推定配分せず、App Serverが返す共有利用枠を1本のメーターとして扱います。
 
@@ -36,7 +36,7 @@ PC版はトレイで起動したままにしてください。PC版は更新時�
 
 ## Smartphone-only setup — Cloud Broker
 
-Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠を更新するための単一ユーザー用構成です。PWAと内部のCodex App Serverを同じTLSドメインで動かし、App Serverは外部へ公開しません。
+Cloud Brokerは、MacやTailscaleなしでiPhone／Androidから利用枠を更新するための単一ユーザー用構成です。初回だけQRまたは同等の一回限りリンクで接続します。PWAと内部のCodex App Serverを同じTLSドメインで動かし、App Serverは外部へ公開しません。
 
 1. Docker対応の**永続コンテナホスト**を用意し、`/home/agentrunway` を非公開の永続ボリュームとして割り当てます。推奨のFly.io設定はリポジトリの `fly.toml` に用意済みです。
 2. それぞれ異なる64文字以上の `AGENT_RUNWAY_BOOTSTRAP_TOKEN` と `AGENT_RUNWAY_SESSION_SECRET` をホストのシークレットとして設定します。例：`openssl rand -hex 32`
@@ -46,7 +46,7 @@ Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠�
 
 Cloud BrokerのPWAが取得・表示するのは認証の準備状態、プラン種別、App Serverの利用枠だけです。会話、プロンプト、スレッド、リポジトリ、メールアドレス、OAuthファイルはブラウザにもアプリのデータベースにも保存しません。
 
-Fly.ioを使う最短の初回起動は、Macのターミナルで次を実行します。Fly CLIが未導入なら先に `brew install flyctl` を実行してください。
+Fly.ioを使う最短の初回起動は、Macのターミナルで次を実行します。Fly CLIが未導入なら、公式インストーラの `curl -L https://fly.io/install.sh | sh` を使えます（表示される `~/.zshrc` のPATH設定も実行してください）。
 
 ```bash
 git clone https://github.com/kkkkggggmmmm/agent-runway.git
@@ -55,6 +55,14 @@ npm ci && npm run cloud:activate
 ```
 
 起動ヘルパーはFlyログイン、匿名アプリ、東京リージョンの暗号化された永続ボリューム、保護シークレット、リモートビルド、ヘルスチェックまで実行し、Mac画面に初回接続用QRコードだけを表示します。QRをスマホで読んだら、画面の案内に従ってローカルQRファイルを削除してください。
+
+初回QRを閉じてしまった、または古いスマホ画面が表示された場合は、新しいアプリを作らずに初回QRだけを安全に再発行できます。`<app-name>` にはターミナルに表示された匿名アプリ名を入れます。
+
+```bash
+npm run cloud:repair -- --app <app-name>
+```
+
+この操作は既存のスマホ接続とCloud Broker内のOpenAI認証を維持し、古い初回QRだけを無効化します。
 
 `Deploy cloud broker` GitHub Actionは、初回後の更新用です。対象アプリだけに限定したFlyデプロイトークンを使います。`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。詳細は [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
 

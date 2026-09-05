@@ -22,4 +22,11 @@ describe("mobile PWA assets", () => {
     expect(serviceWorker).toContain('url.pathname.startsWith("/api/")');
     expect(serviceWorker).not.toMatch(/cache\.put\([^\n]*api/i);
   });
+
+  it("never caches the runtime-mode script", async () => {
+    const serviceWorker = await readFile(path.join(projectRoot, "public/sw.js"), "utf8");
+    expect(serviceWorker).toContain('if (url.pathname === "/runtime-config.js")');
+    expect(serviceWorker).toContain("event.respondWith(fetch(request));");
+    expect(serviceWorker).not.toContain('SHELL_URLS = ["/", "/runtime-config.js"');
+  });
 });
