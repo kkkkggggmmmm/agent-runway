@@ -53,7 +53,8 @@ jobs:
             fi
             sleep 2
           done
-          test "$(docker exec "$container_id" id -u)" = "10001"
+          test "$(docker exec "$container_id" \
+            awk '/^Uid:/ { print $2 }' /proc/1/status)" = "10001"
 
   build:
     needs: quality

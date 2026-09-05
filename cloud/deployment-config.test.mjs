@@ -43,6 +43,6 @@ describe("cloud broker deployment contract", () => {
     expect(entrypoint).toContain('exec gosu agentrunway "$@"');
     expect(entrypoint).not.toContain("chown -R");
     expect(continuousIntegration).toContain("docker build --tag agent-runway-cloud:test .");
-    expect(continuousIntegration).toContain('docker exec "$container_id" id -u');
+    expect(continuousIntegration).toContain("awk '/^Uid:/ { print $2 }' /proc/1/status");
   });
 });
