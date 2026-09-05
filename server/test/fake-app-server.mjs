@@ -41,20 +41,17 @@ reader.on("line", (line) => {
   }
 
   if (message.method === "account/login/start") {
-    if (
-      message.params?.type !== "chatgpt"
-      || message.params?.useHostedLoginSuccessPage !== true
-      || message.params?.appBrand !== "chatgpt"
-    ) {
-      send({ id: message.id, error: { message: "expected hosted ChatGPT login parameters" } });
+    if (message.params?.type !== "chatgptDeviceCode") {
+      send({ id: message.id, error: { message: "expected ChatGPT device-code login parameters" } });
       return;
     }
     send({
       id: message.id,
       result: {
-        type: "chatgpt",
+        type: "chatgptDeviceCode",
         loginId: "fake-login",
-        authUrl: "https://auth.openai.com/authorize?fake=1",
+        verificationUrl: "https://auth.openai.com/codex/device",
+        userCode: "ABCD-1234",
       },
     });
     setTimeout(() => {

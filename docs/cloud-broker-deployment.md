@@ -8,7 +8,7 @@ The deployment boundary is intentionally narrow:
 
 `PWA → same-origin HTTPS API → private Node container → codex app-server (stdio) → OpenAI`
 
-The container exposes neither the Codex App Server protocol nor a generic coding/agent endpoint. Its public API is limited to a one-time mobile bootstrap, OpenAI hosted sign-in state, and rate-limit reads.
+The container exposes neither the Codex App Server protocol nor a generic coding/agent endpoint. Its public API is limited to a one-time mobile bootstrap, OpenAI device-code sign-in state, and rate-limit reads.
 
 ## Host requirements
 
@@ -123,7 +123,7 @@ Use `GET /api/health` as the deployment health check. It returns no account or q
    ```
 
 2. The PWA exchanges the fragment token over HTTPS for an HttpOnly, Secure, SameSite=Strict session cookie and records the bootstrap token as consumed.
-3. Tap **OpenAIで接続する**. Open the supplied OpenAI login page and complete the normal OpenAI sign-in on the phone.
+3. Tap **OpenAIで接続する**. Copy or memorize the one-time code shown in Agent Runway, open the supplied OpenAI device page, and enter that code after normal OpenAI sign-in. This avoids a browser callback to `localhost`.
 4. Wait for the PWA to switch to the dashboard, then install it from Chrome or Safari.
 
 The fragment is removed from the visible URL before the dashboard begins polling. Reuse is rejected after successful setup. If a device must be replaced, rotate both deployment secrets and redeploy, then issue a new bootstrap link.

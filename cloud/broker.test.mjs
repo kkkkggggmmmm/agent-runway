@@ -24,11 +24,12 @@ class FakeClient extends EventEmitter {
     return { status, ...(verificationUrl ? { verificationUrl } : {}), ...(userCode ? { userCode } : {}), ...(error ? { error } : {}) };
   }
 
-  async startHostedLogin() {
+  async startDeviceCodeLogin() {
     this.login = {
       status: "pending",
       loginId: "test-login",
-      verificationUrl: "https://auth.openai.com/authorize?test=1",
+      verificationUrl: "https://auth.openai.com/codex/device",
+      userCode: "ABCD-1234",
     };
     this.emit("login", this.loginSnapshot());
     return this.login;
@@ -52,7 +53,8 @@ describe("CloudBroker", () => {
     const pending = await broker.startLogin();
     expect(pending).toEqual(expect.objectContaining({
       state: "login_pending",
-      verificationUrl: "https://auth.openai.com/authorize?test=1",
+      verificationUrl: "https://auth.openai.com/codex/device",
+      userCode: "ABCD-1234",
     }));
     await expect(broker.rateLimits()).rejects.toBeInstanceOf(CloudBrokerError);
 

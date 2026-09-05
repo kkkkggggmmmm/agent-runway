@@ -42,7 +42,7 @@ export class CloudBroker extends EventEmitter {
     }
     let login;
     try {
-      login = await this.#client.startHostedLogin();
+      login = await this.#client.startDeviceCodeLogin();
     } catch {
       // Do not surface App Server paths or diagnostics to the phone. The
       // structured error lets the UI retain the retry action instead of
