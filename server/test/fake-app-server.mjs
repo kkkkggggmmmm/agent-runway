@@ -45,6 +45,10 @@ reader.on("line", (line) => {
       send({ id: message.id, error: { message: "expected ChatGPT device-code login parameters" } });
       return;
     }
+    if (process.argv.includes("--reject-device-code")) {
+      send({ id: message.id, error: { code: "INVALID_REQUEST", message: "device code is disabled" } });
+      return;
+    }
     send({
       id: message.id,
       result: {

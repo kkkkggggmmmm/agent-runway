@@ -4,7 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { CodexAppServerClient } from "./app-server-client.mjs";
+import { AppServerRequestError, CodexAppServerClient } from "./app-server-client.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const clients = [];
@@ -59,5 +59,19 @@ describe("CodexAppServerClient", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(client.accountSnapshot().account).toEqual({ type: "chatgpt", planType: "pro" });
     expect(JSON.stringify(client.accountSnapshot())).not.toContain("do-not-retain@example.test");
+  });
+
+  it("retains only the App Server protocol code for a rejected device-code request", async () => {
+    const client = new CodexAppServerClient({
+      command: process.execPath,
+      appServerArgs: [path.join(here, "test", "fake-app-server.mjs"), "--reject-device-code"],
+    });
+    clients.push(client);
+
+    await client.start();
+    await expect(client.startDeviceCodeLogin()).rejects.toMatchObject({
+      name: AppServerRequestError.name,
+      code: "INVALID_REQUEST",
+    });
   });
 });
