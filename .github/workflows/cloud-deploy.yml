@@ -1,0 +1,48 @@
+name: Deploy cloud broker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-broker-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy smartphone-only PWA
+    runs-on: ubuntu-24.04
+    environment: cloud-broker-production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+      - name: Validate deployment inputs
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$FLY_APP_NAME" || { echo "FLY_APP_NAME repository variable is missing" >&2; exit 1; }
+          test -n "$FLY_API_TOKEN" || { echo "FLY_API_TOKEN repository secret is missing" >&2; exit 1; }
+      - name: Validate Fly configuration
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl config validate --strict -a "$FLY_APP_NAME"
+      - name: Deploy
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only -a "$FLY_APP_NAME"
+      - name: Verify public health endpoint
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            --retry 12 --retry-delay 5 --retry-all-errors \
+            "https://${FLY_APP_NAME}.fly.dev/api/health" \
+            | grep --fixed-strings '"status":"ok"'

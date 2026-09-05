@@ -1,0 +1,16 @@
+services:
+  agent-runway:
+    build:
+      context: .
+    environment:
+      PORT: "8080"
+      AGENT_RUNWAY_BOOTSTRAP_TOKEN: ${AGENT_RUNWAY_BOOTSTRAP_TOKEN:?Set a one-time setup token of at least 40 characters}
+      AGENT_RUNWAY_SESSION_SECRET: ${AGENT_RUNWAY_SESSION_SECRET:?Set a session signing secret of at least 40 characters}
+    ports:
+      - "${AGENT_RUNWAY_BIND_ADDRESS:-127.0.0.1}:${AGENT_RUNWAY_PORT:-8080}:8080"
+    volumes:
+      - agent-runway-state:/home/agentrunway
+    restart: unless-stopped
+
+volumes:
+  agent-runway-state:

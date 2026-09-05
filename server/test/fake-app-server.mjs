@@ -2,6 +2,7 @@ import readline from "node:readline";
 
 const reader = readline.createInterface({ input: process.stdin });
 let reads = 0;
+let loggedIn = false;
 
 const send = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
 
@@ -25,5 +26,34 @@ reader.on("line", (line) => {
       },
     });
     if (reads === 1) setTimeout(() => send({ method: "account/rateLimits/updated", params: {} }), 100);
+    return;
+  }
+
+  if (message.method === "account/read") {
+    send({
+      id: message.id,
+      result: {
+        account: loggedIn ? { type: "chatgpt", email: "do-not-retain@example.test", planType: "pro" } : null,
+        requiresOpenaiAuth: true,
+      },
+    });
+    return;
+  }
+
+  if (message.method === "account/login/start") {
+    send({
+      id: message.id,
+      result: {
+        type: "chatgptDeviceCode",
+        loginId: "fake-login",
+        verificationUrl: "https://auth.openai.com/codex/device",
+        userCode: "FAKE-1234",
+      },
+    });
+    setTimeout(() => {
+      loggedIn = true;
+      send({ method: "account/login/completed", params: { loginId: "fake-login", success: true, error: null } });
+      send({ method: "account/updated", params: { authMode: "chatgpt", planType: "pro" } });
+    }, 50);
   }
 });

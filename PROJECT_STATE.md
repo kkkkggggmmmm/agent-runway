@@ -1,9 +1,9 @@
 # PROJECT_STATE
 
 - project: Agent Runway
-- version: 0.4.0
-- date: 2026-08-30
-- state: PUBLIC_MOBILE_LINK_CANDIDATE
+- version: 0.5.0
+- date: 2026-09-03
+- state: CLOUD_BROKER_DEPLOYMENT_READY
 - canonical design: ../agent-runway-product-design-v0.1.md
 
 ## Native desktop slice
@@ -21,7 +21,7 @@
 Deterministic quota core + live local bridge + responsive dashboard.
 
 - `npm run check`: pass
-- automated tests: 35 pass
+- automated tests: 45 pass
 - production build: pass
 - demo HTTP/API/CSP integration: pass
 - missing Codex CLI recovery: pass
@@ -38,6 +38,17 @@ Deterministic quota core + live local bridge + responsive dashboard.
 - responsive safe-area and touch-target treatment
 - no Codex or ChatGPT credential material leaves the desktop
 
+## Cloud Broker slice
+
+- smartphone-only PWA route with no Mac, Tailscale, or QR requirement after setup
+- private long-running container owns the documented Codex App Server stdio process; public internet never reaches App Server directly
+- one-time URL-fragment bootstrap token establishes an HttpOnly, Secure, SameSite=Strict mobile session and is then invalidated in the container's non-credential state volume
+- OpenAI device-code login is shown only to the paired phone; app-server alone manages its own auth state on the host-owned persistent volume
+- the PWA receives only auth readiness, plan type, and App Server quota snapshots; it never receives prompts, threads, repositories, email, OAuth files, or generic agent execution
+- Docker image, persistent-volume Compose contract, unit tests, and static-shell runtime configuration are implemented
+- Fly.io production configuration and a manually triggered, app-scoped GitHub deployment workflow are ready
+- **NOT DEPLOYED:** the owner must still create the Fly account/app/volume, set protected secrets, and run the first deployment
+
 ## Environment note
 
 The current build environment has Node.js but does not have Rust or the Codex CLI. Native compilation and installer generation therefore run on GitHub-hosted Windows and macOS runners. The App Server bridge is covered by fake stdio integration tests; the user has separately confirmed the live authenticated account path.
@@ -45,3 +56,5 @@ The current build environment has Node.js but does not have Rust or the Codex CL
 ## Release follow-up
 
 Add Apple Developer ID/notarization and Windows Authenticode credentials before broad public distribution.
+
+Before activating Cloud Broker, complete the one-time Fly account/app/volume setup in `docs/cloud-broker-deployment.md`, create deployment-only secrets without sending them through chat, verify mobile browser QA over HTTPS, and retain the existing desktop snapshot companion as a rollback path.

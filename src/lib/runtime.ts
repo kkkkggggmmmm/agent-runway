@@ -8,6 +8,7 @@ import {
   isCloudMobileEntry,
   mobileAuthorizationHeaders,
 } from "./mobile";
+import { isCloudBrokerRuntime } from "./cloud-broker";
 
 const RATE_LIMIT_EVENT = "agent-runway-rate-limits";
 
@@ -40,6 +41,17 @@ const fetchRateLimits = async (manual: boolean): Promise<RawRateLimitResponse> =
   return await response.json() as RawRateLimitResponse;
 };
 
+const fetchCloudBrokerRateLimits = async (manual: boolean): Promise<RawRateLimitResponse> => {
+  const response = await fetch(manual ? "/api/refresh" : "/api/rate-limits", {
+    method: manual ? "POST" : "GET",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return await response.json() as RawRateLimitResponse;
+};
+
 const fetchCloudRateLimits = async (): Promise<RawRateLimitResponse> => {
   if (!getMobileAccessToken()) {
     throw new Error("スマホ接続リンクが必要です。PC版Agent Runwayで表示されるQRコードを読み取ってください");
@@ -54,7 +66,10 @@ const fetchCloudRateLimits = async (): Promise<RawRateLimitResponse> => {
 };
 
 export const readRateLimits = (manual: boolean): Promise<RawRateLimitResponse> => {
-  if (!isDesktopRuntime()) return isCloudMobileEntry() ? fetchCloudRateLimits() : fetchRateLimits(manual);
+  if (!isDesktopRuntime()) {
+    if (isCloudBrokerRuntime()) return fetchCloudBrokerRateLimits(manual);
+    return isCloudMobileEntry() ? fetchCloudRateLimits() : fetchRateLimits(manual);
+  }
   return invoke<RawRateLimitResponse>(manual ? "refresh_rate_limits" : "get_rate_limits");
 };
 

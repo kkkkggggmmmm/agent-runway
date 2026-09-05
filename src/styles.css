@@ -244,6 +244,28 @@ input[type="range"] { width: 100%; accent-color: var(--blue); cursor: pointer; }
 .no-weekly-card p { color: var(--muted); font-size: 12px; }
 .unavailable-copy { color: var(--muted); font-size: 12px; }
 
+.cloud-onboarding-shell {
+  display: grid;
+  min-height: 100vh;
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  place-items: center;
+  background: #111827;
+}
+.cloud-onboarding-card {
+  width: min(520px, 100%);
+  padding: clamp(26px, 7vw, 42px);
+  color: var(--ink);
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: 0 28px 70px rgba(0,0,0,.28);
+}
+.cloud-onboarding-card h1 { margin: 7px 0 13px; font-size: clamp(25px, 7vw, 34px); letter-spacing: -.04em; }
+.cloud-onboarding-card > p, .device-code-card p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.device-code-card { display: grid; gap: 14px; margin-top: 20px; }
+.external-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.device-code { display: block; padding: 15px; color: #233452; background: #eef2f7; border: 1px solid #d7deea; border-radius: 10px; font: 700 22px ui-monospace, "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; text-align: center; }
+.cloud-privacy-note { margin: 28px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+
 @media (max-width: 900px) {
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .hero-panel { grid-template-columns: 1fr 210px; }

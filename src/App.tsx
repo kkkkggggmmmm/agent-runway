@@ -6,6 +6,7 @@ import {
   isSnapshotStale,
 } from "./core";
 import { EmptyState } from "./components/EmptyState";
+import { CloudBrokerOnboarding } from "./components/CloudBrokerOnboarding";
 import { GaugeIcon, ClockIcon, ShieldIcon } from "./components/Icons";
 import { HeroPanel, type SignalTone } from "./components/HeroPanel";
 import { InstallPrompt } from "./components/InstallPrompt";
@@ -17,6 +18,7 @@ import { StatusHeader } from "./components/StatusHeader";
 import { WeeklyStrip } from "./components/WeeklyStrip";
 import { useBudgetSettings } from "./hooks/useBudgetSettings";
 import { useDesktopPreferences } from "./hooks/useDesktopPreferences";
+import { useCloudBroker } from "./hooks/useCloudBroker";
 import { useMobileAccess } from "./hooks/useMobileAccess";
 import { useNow } from "./hooks/useNow";
 import { useQuotaSnapshot } from "./hooks/useQuotaSnapshot";
@@ -49,7 +51,7 @@ const metricEmphasis = (tone: SignalTone): "neutral" | "positive" | "warning" | 
   return "neutral";
 };
 
-export default function App() {
+const Dashboard = () => {
   const { snapshot, history, events, loading, refreshing, error, refresh } = useQuotaSnapshot();
   const { settings, setReservePercent } = useBudgetSettings();
   const desktop = useDesktopPreferences();
@@ -190,9 +192,26 @@ export default function App() {
 
         <footer className="app-footer">
           <span>Private by default · No prompts or credentials shared</span>
-          <span>{desktop.isDesktop ? "Native tray active · " : "Mobile companion · "}Agent Runway v0.4.0</span>
+          <span>{desktop.isDesktop ? "Native tray active · " : "Mobile companion · "}Agent Runway v0.5.0</span>
         </footer>
       </main>
     </div>
   );
+};
+
+export default function App() {
+  const cloud = useCloudBroker();
+
+  if (cloud.active && (cloud.loading || cloud.status?.state !== "ready")) {
+    return (
+      <CloudBrokerOnboarding
+        loading={cloud.loading}
+        status={cloud.status}
+        error={cloud.error}
+        onStartLogin={() => void cloud.startLogin()}
+      />
+    );
+  }
+
+  return <Dashboard />;
 }

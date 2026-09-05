@@ -2,7 +2,7 @@
 
 ChatGPT WorkとCodexの共有利用枠を、残量だけでなく「何日分先行しているか」「いつ枯渇するか」「今日あと何%使えるか」で判断するローカルダッシュボードです。
 
-## Desktop + mobile v0.4
+## Desktop + mobile v0.5
 
 - Windows: NSIS `.exe` / MSI `.msi` インストーラー
 - macOS: Universal `.dmg`（Apple Silicon / Intel）
@@ -15,6 +15,7 @@ ChatGPT WorkとCodexの共有利用枠を、残量だけでなく「何日分先
 - iPhone / Androidへホーム画面インストールできるPWA companion
 - 常設HTTPSリンク、QRコードペアリング、Bearer認証、いつでも無効化・再発行
 - スマホが一時的にオフラインでも最後の正常な利用枠を表示
+- **Cloud Broker mode**：Macを起動せず、スマホ単独で利用枠を更新するPWA
 
 WorkとCodexを別々に推定配分せず、App Serverが返す共有利用枠を1本のメーターとして扱います。
 
@@ -25,13 +26,27 @@ WorkとCodexを別々に推定配分せず、App Serverが返す共有利用枠�
 
 Codexが標準位置にない場合、アプリ起動前に `CODEX_BIN` に実行ファイルの絶対パスを設定できます。macOS版は `/opt/homebrew/bin/codex`、`/usr/local/bin/codex`、`~/.local/bin/codex`、`~/.npm-global/bin/codex`、`~/.volta/bin/codex` も探索します。
 
-## iPhone / Android setup
+## iPhone / Android setup — desktop companion
 
 1. PC版Agent Runwayの「iPhone / Androidで見る」を有効にします。
 2. 表示されたQRコードをスマホで読み取ります。実際に使うURLは `https://agent-runway-mobile.keijimizoguchi.chatgpt.site/#access_token=…` 形式です。
 3. iPhoneはSafariの共有メニューから「ホーム画面に追加」、Androidはブラウザの「アプリをインストール」を選びます。
 
 PC版はトレイで起動したままにしてください。PC版は更新時と5分ごとに、利用枠・観測時刻・リセット時刻だけを同期します。Codex認証、プロンプト、会話、ローカルパスは同期しません。接続コードを再発行または共有を停止すると、以前のリンクは直ちに無効になります。
+
+## Smartphone-only setup — Cloud Broker
+
+Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠を更新するための単一ユーザー用構成です。PWAと内部のCodex App Serverを同じTLSドメインで動かし、App Serverは外部へ公開しません。
+
+1. Docker対応の**永続コンテナホスト**を用意し、`/home/agentrunway` を非公開の永続ボリュームとして割り当てます。推奨のFly.io設定はリポジトリの `fly.toml` に用意済みです。
+2. それぞれ異なる64文字以上の `AGENT_RUNWAY_BOOTSTRAP_TOKEN` と `AGENT_RUNWAY_SESSION_SECRET` をホストのシークレットとして設定します。例：`openssl rand -hex 32`
+3. コンテナをHTTPSドメインへ公開し、`https://<your-domain>/api/health` が `{"status":"ok"}` を返すことを確認します。
+4. 初回だけ `https://<your-domain>/#setup=<AGENT_RUNWAY_BOOTSTRAP_TOKEN>` をこのスマホで開きます。トークンはURLフラグメントに置かれ、サーバーログに送られず、接続後は無効化されます。
+5. 画面の「OpenAIで接続する」からデバイスコード認証を一度だけ実施します。以後は通常URLをホーム画面へインストールして使えます。
+
+Cloud BrokerのPWAが取得・表示するのは認証の準備状態、プラン種別、App Serverの利用枠だけです。会話、プロンプト、スレッド、リポジトリ、メールアドレス、OAuthファイルはブラウザにもアプリのデータベースにも保存しません。
+
+`Deploy cloud broker` GitHub Actionは手動実行専用で、対象アプリだけに限定したFlyデプロイトークンを使います。`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。初回設定のコマンドは [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
 
 ## Installers
 
@@ -78,7 +93,7 @@ npm run check
 npm run desktop:test
 ```
 
-Web検証はESLint、35件の自動テスト、TypeScript、本番ビルドを実行します。Rustテストは週次ウィンドウ判定、JSONL App Server接続、更新通知、CLI不在時の復旧状態、モバイル接続コードを検証します。
+Web検証はESLint、45件の自動テスト、TypeScript、本番ビルドを実行します。Rustテストは週次ウィンドウ判定、JSONL App Server接続、更新通知、CLI不在時の復旧状態、モバイル接続コードを検証します。CIではCloud BrokerのDockerイメージも起動し、非root実行とヘルスチェックを確認します。
 
 ## Local data and security
 

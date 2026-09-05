@@ -1,5 +1,5 @@
-const CACHE_NAME = "agent-runway-shell-v3";
-const SHELL_URLS = ["/", "/manifest.webmanifest", "/app-icon.svg", "/app-icon-256.png", "/app-icon-512.png"];
+const CACHE_NAME = "agent-runway-shell-v4";
+const SHELL_URLS = ["/", "/runtime-config.js", "/manifest.webmanifest", "/app-icon.svg", "/app-icon-256.png", "/app-icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS)));
