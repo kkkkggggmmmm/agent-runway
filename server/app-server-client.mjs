@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import readline from "node:readline";
 
 const REQUEST_TIMEOUT_MS = 12_000;
+const LOGIN_REQUEST_TIMEOUT_MS = 60_000;
 const POLL_INTERVAL_MS = 5 * 60_000;
 
 export class CodexAppServerClient extends EventEmitter {
@@ -129,26 +130,30 @@ export class CodexAppServerClient extends EventEmitter {
     return this.account;
   }
 
-  async startDeviceCodeLogin() {
+  async startHostedLogin() {
     if (!this.#process || this.status === "unavailable") {
       throw new Error(this.lastError || "Codex App Serverへ接続できません");
     }
     if (this.login?.status === "pending") return this.login;
 
-    const result = await this.#request("account/login/start", { type: "chatgptDeviceCode" });
+    const result = await this.#request("account/login/start", {
+      type: "chatgpt",
+      // The hosted completion page works when the App Server runs on Fly, where
+      // a phone cannot reach a localhost callback on the server.
+      useHostedLoginSuccessPage: true,
+      appBrand: "chatgpt",
+    }, LOGIN_REQUEST_TIMEOUT_MS);
     if (
-      result?.type !== "chatgptDeviceCode"
+      result?.type !== "chatgpt"
       || typeof result.loginId !== "string"
-      || typeof result.verificationUrl !== "string"
-      || typeof result.userCode !== "string"
+      || typeof result.authUrl !== "string"
     ) {
-      throw new Error("デバイスコード認証を開始できません");
+      throw new Error("OpenAIログインを開始できません");
     }
     this.login = {
       status: "pending",
       loginId: result.loginId,
-      verificationUrl: result.verificationUrl,
-      userCode: result.userCode,
+      verificationUrl: result.authUrl,
     };
     this.emit("login", this.loginSnapshot());
     return this.login;
@@ -194,14 +199,14 @@ export class CodexAppServerClient extends EventEmitter {
     this.#process.stdin.write(`${JSON.stringify(message)}\n`);
   }
 
-  #request(method, params) {
+  #request(method, params, timeoutMs = REQUEST_TIMEOUT_MS) {
     const id = this.#nextId;
     this.#nextId += 1;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.#pending.delete(id);
         reject(new Error(`${method} timed out`));
-      }, REQUEST_TIMEOUT_MS);
+      }, timeoutMs);
       timer.unref?.();
       this.#pending.set(id, { resolve, reject, timer });
       try {

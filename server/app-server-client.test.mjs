@@ -41,7 +41,7 @@ describe("CodexAppServerClient", () => {
     expect(client.lastError).toBe("Codex CLIが見つかりません");
   });
 
-  it("uses the documented device-code login without retaining account identity", async () => {
+  it("uses the hosted ChatGPT login without retaining account identity", async () => {
     const client = new CodexAppServerClient({
       command: process.execPath,
       appServerArgs: [path.join(here, "test", "fake-app-server.mjs")],
@@ -50,10 +50,9 @@ describe("CodexAppServerClient", () => {
 
     await client.start();
     await expect(client.getAccount()).resolves.toBeNull();
-    await expect(client.startDeviceCodeLogin()).resolves.toMatchObject({
+    await expect(client.startHostedLogin()).resolves.toMatchObject({
       status: "pending",
-      verificationUrl: "https://auth.openai.com/codex/device",
-      userCode: "FAKE-1234",
+      verificationUrl: "https://auth.openai.com/authorize?fake=1",
     });
 
     await new Promise((resolve) => setTimeout(resolve, 100));
