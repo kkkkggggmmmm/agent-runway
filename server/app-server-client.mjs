@@ -6,6 +6,14 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const LOGIN_REQUEST_TIMEOUT_MS = 60_000;
 const POLL_INTERVAL_MS = 5 * 60_000;
 
+export class AppServerRequestError extends Error {
+  constructor(message, code = null) {
+    super(message);
+    this.name = "AppServerRequestError";
+    this.code = typeof code === "string" || typeof code === "number" ? code : null;
+  }
+}
+
 export class CodexAppServerClient extends EventEmitter {
   #command;
   #appServerArgs;
@@ -236,7 +244,10 @@ export class CodexAppServerClient extends EventEmitter {
       clearTimeout(pending.timer);
       this.#pending.delete(message.id);
       if (message.error) {
-        pending.reject(new Error(message.error.message || "App Server request failed"));
+        pending.reject(new AppServerRequestError(
+          typeof message.error.message === "string" ? message.error.message : "App Server request failed",
+          message.error.code,
+        ));
       } else {
         pending.resolve(message.result ?? {});
       }

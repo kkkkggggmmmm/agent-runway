@@ -66,4 +66,19 @@ describe("CloudBroker", () => {
     expect(broker.status()).toEqual({ state: "ready", planType: "pro" });
     await expect(broker.rateLimits()).resolves.toEqual(expect.objectContaining({ source: "live" }));
   });
+
+  it("returns a safe, actionable category when App Server rejects device-code login", async () => {
+    const client = new FakeClient();
+    client.startDeviceCodeLogin = async () => {
+      const error = new Error("device code is disabled");
+      error.code = "INVALID_REQUEST";
+      throw error;
+    };
+    const broker = new CloudBroker({ client });
+
+    await expect(broker.startLogin()).rejects.toMatchObject({
+      code: "device_code_rejected",
+      message: expect.stringContaining("デバイスコード認証"),
+    });
+  });
 });

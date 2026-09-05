@@ -9,6 +9,36 @@ export class CloudBrokerError extends Error {
 
 const isChatGptAccount = (account) => account?.type === "chatgpt" || account?.type === "chatgptAuthTokens";
 
+const deviceCodeStartFailure = (error) => {
+  const protocolCode = String(error?.code ?? "").toLowerCase();
+  const detail = error instanceof Error ? error.message : "";
+
+  // App Server errors may contain host-local diagnostics. Keep those private,
+  // but give the paired phone an actionable, non-sensitive category.
+  if (
+    protocolCode === "invalid_request"
+    || protocolCode === "-32602"
+    || /device[ -]?code.*(?:disabled|not enabled|not available|unavailable)/i.test(detail)
+  ) {
+    return new CloudBrokerError(
+      "device_code_rejected",
+      "OpenAIがデバイスコード認証の開始を受け付けませんでした。ChatGPTの「セキュリティとログイン」で有効化済みかを確認し、数分後に一度だけ再試行してください。",
+    );
+  }
+
+  if (/account\/login\/start timed out/i.test(detail)) {
+    return new CloudBrokerError(
+      "device_code_timeout",
+      "OpenAIのデバイスコード認証の開始が時間切れになりました。接続を確認してから、数分後に一度だけ再試行してください。",
+    );
+  }
+
+  return new CloudBrokerError(
+    "device_code_start_failed",
+    "OpenAIのデバイスコード認証を開始できませんでした。認証情報は送信されていません。",
+  );
+};
+
 export class CloudBroker extends EventEmitter {
   #client;
   #started = false;
@@ -43,14 +73,8 @@ export class CloudBroker extends EventEmitter {
     let login;
     try {
       login = await this.#client.startDeviceCodeLogin();
-    } catch {
-      // Do not surface App Server paths or diagnostics to the phone. The
-      // structured error lets the UI retain the retry action instead of
-      // collapsing into an unhelpful generic 503 state.
-      throw new CloudBrokerError(
-        "login_start_failed",
-        "OpenAIログインを開始できませんでした。数秒待ってから、もう一度お試しください。",
-      );
+    } catch (error) {
+      throw deviceCodeStartFailure(error);
     }
     this.#login = this.#client.loginSnapshot?.() ?? login;
     this.emit("status", this.status());
