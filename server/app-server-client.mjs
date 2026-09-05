@@ -130,30 +130,33 @@ export class CodexAppServerClient extends EventEmitter {
     return this.account;
   }
 
-  async startHostedLogin() {
+  async startDeviceCodeLogin() {
     if (!this.#process || this.status === "unavailable") {
       throw new Error(this.lastError || "Codex App Serverへ接続できません");
     }
     if (this.login?.status === "pending") return this.login;
 
+    // A browser login sends its callback to the App Server's localhost listener.
+    // That listener is intentionally not exposed by the Cloud Broker, so a phone
+    // cannot complete that flow. Device-code login lets the browser authorize the
+    // App Server process without putting any callback, credential, or token in the
+    // public app.
     const result = await this.#request("account/login/start", {
-      type: "chatgpt",
-      // The hosted completion page works when the App Server runs on Fly, where
-      // a phone cannot reach a localhost callback on the server.
-      useHostedLoginSuccessPage: true,
-      appBrand: "chatgpt",
+      type: "chatgptDeviceCode",
     }, LOGIN_REQUEST_TIMEOUT_MS);
     if (
-      result?.type !== "chatgpt"
+      result?.type !== "chatgptDeviceCode"
       || typeof result.loginId !== "string"
-      || typeof result.authUrl !== "string"
+      || typeof result.verificationUrl !== "string"
+      || typeof result.userCode !== "string"
     ) {
       throw new Error("OpenAIログインを開始できません");
     }
     this.login = {
       status: "pending",
       loginId: result.loginId,
-      verificationUrl: result.authUrl,
+      verificationUrl: result.verificationUrl,
+      userCode: result.userCode,
     };
     this.emit("login", this.loginSnapshot());
     return this.login;

@@ -38,9 +38,9 @@ export const CloudBrokerOnboarding = ({
 
         {pending ? (
           <div className="cloud-login-card">
-            <p>OpenAIの通常ログイン画面を開き、このスマホでログインを完了してください。</p>
-            <a className="primary-button external-link" href={status.verificationUrl} target="_blank" rel="noreferrer">OpenAIログインを開く</a>
-            {status.userCode ? <code className="device-code">{status.userCode}</code> : null}
+            <p>下の接続コードを確認し、OpenAIの画面で入力してください。認証情報はこのアプリへ送られません。</p>
+            {status.userCode ? <code className="device-code" aria-label="OpenAI接続コード">{status.userCode}</code> : null}
+            <a className="primary-button external-link" href={status.verificationUrl} target="_blank" rel="noreferrer">OpenAIでコードを入力</a>
             <p className="quiet-note">ログイン完了後、この画面は自動的に利用枠表示へ切り替わります。</p>
           </div>
         ) : null}

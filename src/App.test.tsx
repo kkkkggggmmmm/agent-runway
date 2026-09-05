@@ -93,23 +93,25 @@ describe("Agent Runway dashboard", () => {
     }));
   });
 
-  it("shows the hosted OpenAI login before exposing quota data", async () => {
+  it("shows the OpenAI device-code login before exposing quota data", async () => {
     window.__AGENT_RUNWAY_RUNTIME__ = { mode: "cloud-broker" };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(responseWith({ state: "signed_out" }))
       .mockResolvedValueOnce(responseWith({
         state: "login_pending",
-        verificationUrl: "https://auth.openai.com/authorize?test=1",
+        verificationUrl: "https://auth.openai.com/codex/device",
+        userCode: "ABCD-1234",
       }));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: "OpenAIで接続する" }));
-    expect(await screen.findByRole("link", { name: "OpenAIログインを開く" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "OpenAIでコードを入力" })).toHaveAttribute(
       "href",
-      "https://auth.openai.com/authorize?test=1",
+      "https://auth.openai.com/codex/device",
     );
+    expect(screen.getByText("ABCD-1234")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "利用枠を再取得" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith("/api/login/start", expect.objectContaining({
       method: "POST",
