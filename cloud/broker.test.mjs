@@ -24,12 +24,11 @@ class FakeClient extends EventEmitter {
     return { status, ...(verificationUrl ? { verificationUrl } : {}), ...(userCode ? { userCode } : {}), ...(error ? { error } : {}) };
   }
 
-  async startDeviceCodeLogin() {
+  async startHostedLogin() {
     this.login = {
       status: "pending",
       loginId: "test-login",
-      verificationUrl: "https://auth.openai.com/codex/device",
-      userCode: "TEST-1234",
+      verificationUrl: "https://auth.openai.com/authorize?test=1",
     };
     this.emit("login", this.loginSnapshot());
     return this.login;
@@ -51,7 +50,10 @@ describe("CloudBroker", () => {
     expect(broker.status()).toEqual({ state: "signed_out" });
 
     const pending = await broker.startLogin();
-    expect(pending).toEqual(expect.objectContaining({ state: "login_pending", userCode: "TEST-1234" }));
+    expect(pending).toEqual(expect.objectContaining({
+      state: "login_pending",
+      verificationUrl: "https://auth.openai.com/authorize?test=1",
+    }));
     await expect(broker.rateLimits()).rejects.toBeInstanceOf(CloudBrokerError);
 
     client.account = { type: "chatgpt", planType: "pro" };

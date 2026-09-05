@@ -42,7 +42,7 @@ Cloud Brokerは、MacやTailscaleなしでiPhone／Androidから利用枠を更�
 2. それぞれ異なる64文字以上の `AGENT_RUNWAY_BOOTSTRAP_TOKEN` と `AGENT_RUNWAY_SESSION_SECRET` をホストのシークレットとして設定します。例：`openssl rand -hex 32`
 3. コンテナをHTTPSドメインへ公開し、`https://<your-domain>/api/health` が `{"status":"ok"}` を返すことを確認します。
 4. 初回だけ `https://<your-domain>/#setup=<AGENT_RUNWAY_BOOTSTRAP_TOKEN>` をこのスマホで開きます。トークンはURLフラグメントに置かれ、サーバーログに送られず、接続後は無効化されます。
-5. 画面の「OpenAIで接続する」からデバイスコード認証を一度だけ実施します。以後は通常URLをホーム画面へインストールして使えます。
+5. 画面の「OpenAIで接続する」から、このスマホの通常のOpenAIログインを一度だけ完了します。以後は通常URLをホーム画面へインストールして使えます。
 
 Cloud BrokerのPWAが取得・表示するのは認証の準備状態、プラン種別、App Serverの利用枠だけです。会話、プロンプト、スレッド、リポジトリ、メールアドレス、OAuthファイルはブラウザにもアプリのデータベースにも保存しません。
 

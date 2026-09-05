@@ -260,8 +260,8 @@ input[type="range"] { width: 100%; accent-color: var(--blue); cursor: pointer; }
   box-shadow: 0 28px 70px rgba(0,0,0,.28);
 }
 .cloud-onboarding-card h1 { margin: 7px 0 13px; font-size: clamp(25px, 7vw, 34px); letter-spacing: -.04em; }
-.cloud-onboarding-card > p, .device-code-card p { color: var(--muted); font-size: 14px; line-height: 1.7; }
-.device-code-card { display: grid; gap: 14px; margin-top: 20px; }
+.cloud-onboarding-card > p, .cloud-login-card p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.cloud-login-card { display: grid; gap: 14px; margin-top: 20px; }
 .external-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .device-code { display: block; padding: 15px; color: #233452; background: #eef2f7; border: 1px solid #d7deea; border-radius: 10px; font: 700 22px ui-monospace, "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; text-align: center; }
 .cloud-privacy-note { margin: 28px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }

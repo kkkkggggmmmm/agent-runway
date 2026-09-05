@@ -8,7 +8,7 @@ The deployment boundary is intentionally narrow:
 
 `PWA → same-origin HTTPS API → private Node container → codex app-server (stdio) → OpenAI`
 
-The container exposes neither the Codex App Server protocol nor a generic coding/agent endpoint. Its public API is limited to a one-time mobile bootstrap, OpenAI device-code sign-in state, and rate-limit reads.
+The container exposes neither the Codex App Server protocol nor a generic coding/agent endpoint. Its public API is limited to a one-time mobile bootstrap, OpenAI hosted sign-in state, and rate-limit reads.
 
 ## Host requirements
 
@@ -40,7 +40,7 @@ npm ci && npm run cloud:activate
 
 It opens the normal Fly login in the local browser if required, asks for an explicit `DEPLOY` confirmation before incurring costs, creates an anonymous app name, creates the encrypted Tokyo volume, generates the two secrets locally, deploys remotely, verifies health, and opens a local one-time QR code for the phone. The QR is held only in a `0700` temporary directory and is deleted only after the owner explicitly types `DONE`. It never prints or uploads the bootstrap link.
 
-After scanning the QR code, complete the OpenAI device-code sign-in on the phone, then install the PWA. The rest of this document is the manual equivalent and recovery reference.
+After scanning the QR code, complete the normal OpenAI sign-in in the phone browser, then install the PWA. The rest of this document is the manual equivalent and recovery reference.
 
 Install `flyctl`, sign in using the browser opened by the CLI, then create an anonymous app name:
 
@@ -123,7 +123,7 @@ Use `GET /api/health` as the deployment health check. It returns no account or q
    ```
 
 2. The PWA exchanges the fragment token over HTTPS for an HttpOnly, Secure, SameSite=Strict session cookie and records the bootstrap token as consumed.
-3. Tap **OpenAIで接続する**. Open the supplied verification URL, enter the supplied device code, and complete the normal OpenAI sign-in.
+3. Tap **OpenAIで接続する**. Open the supplied OpenAI login page and complete the normal OpenAI sign-in on the phone.
 4. Wait for the PWA to switch to the dashboard, then install it from Chrome or Safari.
 
 The fragment is removed from the visible URL before the dashboard begins polling. Reuse is rejected after successful setup. If a device must be replaced, rotate both deployment secrets and redeploy, then issue a new bootstrap link.
@@ -133,7 +133,7 @@ The fragment is removed from the visible URL before the dashboard begins polling
 - `https://<deployment-domain>/api/health` returns `200`.
 - Opening the root URL on an unpaired browser reveals no quota data.
 - The one-time fragment link establishes a session and is rejected when replayed.
-- Device-code login completes from the phone and switches the status to `ready`.
+- Hosted OpenAI login completes from the phone and switches the status to `ready`.
 - `利用枠を再取得` returns a current App Server snapshot with no desktop or Tailscale connection.
 - Chrome Android and Safari iOS can install the PWA; offline mode shows only the last cached snapshot.
 - No route exposes `codex app-server`, OAuth files, prompts, threads, local paths, or generic command execution.

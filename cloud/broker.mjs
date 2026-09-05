@@ -40,7 +40,18 @@ export class CloudBroker extends EventEmitter {
     if (this.#client.status === "unavailable") {
       throw new CloudBrokerError("app_server_unavailable", this.#client.lastError || "Codex App Serverへ接続できません");
     }
-    const login = await this.#client.startDeviceCodeLogin();
+    let login;
+    try {
+      login = await this.#client.startHostedLogin();
+    } catch {
+      // Do not surface App Server paths or diagnostics to the phone. The
+      // structured error lets the UI retain the retry action instead of
+      // collapsing into an unhelpful generic 503 state.
+      throw new CloudBrokerError(
+        "login_start_failed",
+        "OpenAIログインを開始できませんでした。数秒待ってから、もう一度お試しください。",
+      );
+    }
     this.#login = this.#client.loginSnapshot?.() ?? login;
     this.emit("status", this.status());
     return this.status();
