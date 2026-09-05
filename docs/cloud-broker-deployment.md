@@ -28,6 +28,20 @@ The checked-in `fly.toml` is the supported production configuration. It uses the
 
 Fly.io requires an account with billing enabled for a continuously running Machine. Complete the following one-time setup on your own computer. Never paste a Fly token, bootstrap token, session secret, password, or one-time code into chat.
 
+### Fastest first activation
+
+On a Mac with Node.js 22 and Git installed, run the activation helper from a fresh clone. If needed, first install Fly CLI with `brew install flyctl`.
+
+```bash
+git clone https://github.com/kkkkggggmmmm/agent-runway.git
+cd agent-runway
+npm ci && npm run cloud:activate
+```
+
+It opens the normal Fly login in the local browser if required, asks for an explicit `DEPLOY` confirmation before incurring costs, creates an anonymous app name, creates the encrypted Tokyo volume, generates the two secrets locally, deploys remotely, verifies health, and opens a local one-time QR code for the phone. The QR is held only in a `0700` temporary directory and is deleted when the terminal prompt is confirmed. It never prints or uploads the bootstrap link.
+
+After scanning the QR code, complete the OpenAI device-code sign-in on the phone, then install the PWA. The rest of this document is the manual equivalent and recovery reference.
+
 Install `flyctl`, sign in using the browser opened by the CLI, then create an anonymous app name:
 
 ```bash
@@ -50,12 +64,13 @@ openssl rand -hex 32
 openssl rand -hex 32
 ```
 
-Set them directly as protected Fly secrets. Use the two different values printed by the earlier commands; do not save them in the repository:
+Set them directly as protected Fly secrets. Use the two different values printed by the earlier commands; do not save them in the repository. Importing through standard input keeps them out of terminal history and process arguments:
 
 ```bash
-fly secrets set --app <app-name> \
-  AGENT_RUNWAY_BOOTSTRAP_TOKEN=<first-value> \
-  AGENT_RUNWAY_SESSION_SECRET=<second-value>
+printf '%s\n' \
+  "AGENT_RUNWAY_BOOTSTRAP_TOKEN=<first-value>" \
+  "AGENT_RUNWAY_SESSION_SECRET=<second-value>" \
+  | fly secrets import --app <app-name> --stage
 ```
 
 Deploy the first release and verify the non-sensitive health endpoint:

@@ -46,7 +46,17 @@ Cloud Brokerは、Mac・Tailscale・QRなしでiPhone／Androidから利用枠�
 
 Cloud BrokerのPWAが取得・表示するのは認証の準備状態、プラン種別、App Serverの利用枠だけです。会話、プロンプト、スレッド、リポジトリ、メールアドレス、OAuthファイルはブラウザにもアプリのデータベースにも保存しません。
 
-`Deploy cloud broker` GitHub Actionは手動実行専用で、対象アプリだけに限定したFlyデプロイトークンを使います。`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。初回設定のコマンドは [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
+Fly.ioを使う最短の初回起動は、Macのターミナルで次を実行します。Fly CLIが未導入なら先に `brew install flyctl` を実行してください。
+
+```bash
+git clone https://github.com/kkkkggggmmmm/agent-runway.git
+cd agent-runway
+npm ci && npm run cloud:activate
+```
+
+起動ヘルパーはFlyログイン、匿名アプリ、東京リージョンの暗号化された永続ボリューム、保護シークレット、リモートビルド、ヘルスチェックまで実行し、Mac画面に初回接続用QRコードだけを表示します。QRをスマホで読んだら、画面の案内に従ってローカルQRファイルを削除してください。
+
+`Deploy cloud broker` GitHub Actionは、初回後の更新用です。対象アプリだけに限定したFlyデプロイトークンを使います。`docker compose -f docker-compose.cloud.yml` はローカル／自己管理ホスト用です。プロダクションでは必ずTLSを終端するホストを使ってください。Vercel FunctionsやSupabase Edge Functionsのような永続プライベートボリュームを持たない実行環境は、App Server認証の保存先として使いません。詳細は [Cloud Broker deployment](docs/cloud-broker-deployment.md) を参照してください。
 
 ## Installers
 
