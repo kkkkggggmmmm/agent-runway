@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";

@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { EventEmitter } from "node:events";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CloudBroker, CloudBrokerError } from "./broker.mjs";
+import { CodexAppServerClient } from "../server/app-server-client.mjs";
 
 class FakeClient extends EventEmitter {
   status = "idle";
@@ -44,6 +46,34 @@ class FakeClient extends EventEmitter {
 }
 
 describe("CloudBroker", () => {
+  it("consumes App Server account events without re-reading the account", async () => {
+    const client = new CodexAppServerClient({
+      command: process.execPath,
+      appServerArgs: [path.resolve("server/test/fake-app-server.mjs")],
+    });
+    const originalGetAccount = client.getAccount.bind(client);
+    let reads = 0;
+    client.getAccount = async () => {
+      reads += 1;
+      // Bound a regression so a failed assertion cannot create an RPC loop.
+      if (reads > 2) return null;
+      return originalGetAccount();
+    };
+    const broker = new CloudBroker({ client });
+    try {
+      await broker.start();
+      expect(reads).toBe(1);
+      expect(broker.status()).toEqual({ state: "signed_out" });
+      client.emit("account", { account: { type: "chatgpt", planType: "pro" }, login: null });
+      expect(broker.status()).toEqual({ state: "ready", planType: "pro" });
+      client.emit("account", { account: null, login: null });
+      expect(broker.status()).toEqual({ state: "signed_out" });
+      expect(reads).toBe(1);
+    } finally {
+      broker.stop();
+    }
+  });
+
   it("keeps the service signed out until the managed app-server login completes", async () => {
     const client = new FakeClient();
     const broker = new CloudBroker({ client });
@@ -60,7 +90,7 @@ describe("CloudBroker", () => {
 
     client.account = { type: "chatgpt", planType: "pro" };
     client.login = { status: "completed" };
-    client.emit("account", client.loginSnapshot());
+    client.emit("account", { account: client.account, login: client.loginSnapshot() });
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(broker.status()).toEqual({ state: "ready", planType: "pro" });

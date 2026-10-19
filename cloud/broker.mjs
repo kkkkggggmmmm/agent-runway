@@ -53,7 +53,13 @@ export class CloudBroker extends EventEmitter {
   async start() {
     if (this.#started) return this.status();
     this.#started = true;
-    this.#client.on("account", () => void this.#syncAccount());
+    this.#client.on("account", (snapshot) => {
+      // getAccount() emits this event too. Consume its already-filtered data;
+      // reading again here would create an endless account/read cycle.
+      this.#account = snapshot?.account ?? null;
+      this.#login = snapshot?.login ?? this.#login;
+      this.emit("status", this.status());
+    });
     this.#client.on("login", () => {
       this.#login = this.#client.loginSnapshot?.() ?? null;
       void this.#syncAccount();
